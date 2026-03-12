@@ -1,0 +1,4 @@
+# Don't include environment variables
+.env
+.DS_Store
+*Zone.Identifier
