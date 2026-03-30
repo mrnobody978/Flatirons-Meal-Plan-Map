@@ -2,3 +2,4 @@
 .env
 .DS_Store
 *Zone.Identifier
+node_modules/
