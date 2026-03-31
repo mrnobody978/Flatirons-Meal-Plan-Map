@@ -70,7 +70,7 @@ Handlebars.registerHelper('isEqual', (value1, value2) => {
     return value1 == value2;
 });
 
-// API Routes ------------------------------------------------------------------------------------------
+// Routes ------------------------------------------------------------------------------------------
 
 app.get("/", (req, res) => {
     res.redirect("/register"); // TODO switch this to something else probably
@@ -82,7 +82,7 @@ app.get("/resources/:filename", (req, res) => {
     // TODO Make this more secure
 });
 
-// API Routes for Registering
+// Routes for Registering
 
 app.get("/register", async (req, res) => {
     res.render("pages/register");
@@ -92,15 +92,27 @@ app.post("/register", async (req, res) => {
     // TODO Add password reentry
     const username = req.body.username;
     const password = req.body.password;
-    const passwordHashed = await bcrypt.hash(req.body.password, 10); // I dont know what the 10 means
+    const password2 = req.body.password2;
 
-    const usernameRegex = /^[A-Za-z0-9_.-]{6,50}$/; // Username allows letters, numbers, and characters _ . - (6-50 characters total)
+    const usernameRegex = /^[A-Za-z0-9_.\-]{6,50}$/; // Username allows letters, numbers, and characters _ . - (6-50 characters total)
     const passwordRegex = /^[^\s';]{6,50}$/; // Password allows any character excluding whitespace, ', and ; (6-50 characters total))
 
-    if (! usernameRegex.test(username) || ! passwordRegex.test(password)) { // Invalid username or password
-        res.render("pages/register", {messageType: 'warning', messageText: 'Invalid username or password'});
+    if (! usernameRegex.test(username)) { // Invalid username
+        res.render("pages/register", {messageType: 'warning', messageText: 'Invalid username.  Username must be 4-50 characters and contain only letters, numbers, and characters _ . and -'});
         return;
     }
+    // TODO Maybe add more password checking to guarentee safe passwords
+    if (! passwordRegex.test(password)) { // Invalid password
+        res.render("pages/register", {messageType: 'warning', messageText: 'Invalid password.  Password must be at least 6 characters and cannot contain spaces, \', or ;', usernameDefault: username});
+        return;
+    }
+    
+    if (password != password2) { // Password doesn't match re-entered password
+        res.render("pages/register", {messageType: 'warning', messageText: 'Passwords must match', usernameDefault: username});
+        return;
+    }
+    
+    const passwordHashed = await bcrypt.hash(password, 10); // 10 complexity, maybe increase this later
 
     const FIND_USERNAME_QUERY = "SELECT * FROM users WHERE username = $1 LIMIT 1;";
     const INSERT_USER_QUERY = "INSERT INTO users (username, password) VALUES ($1, $2);";
@@ -124,7 +136,7 @@ app.post("/register", async (req, res) => {
     
 });
 
-// API Routes for Dashboard
+// Routes for Dashboard
 
 app.get("/dashboard", (req, res) => {
     res.render("pages/dashboard");
