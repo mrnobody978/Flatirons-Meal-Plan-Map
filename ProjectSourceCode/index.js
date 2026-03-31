@@ -67,13 +67,13 @@ app.use(
 
 // Custom handlebars helpers
 Handlebars.registerHelper('isEqual', (value1, value2) => {
-    return value1 == value2;
+  return value1 == value2;
 });
 
 // Routes ------------------------------------------------------------------------------------------
 
 app.get("/", (req, res) => {
-    res.redirect("/register"); // TODO switch this to something else probably
+  res.redirect("/register"); // TODO switch this to something else probably
 });
 
 // For getting the style.css file and other stuff in resources
@@ -85,61 +85,82 @@ app.get("/resources/:filename", (req, res) => {
 // Routes for Registering
 
 app.get("/register", async (req, res) => {
-    res.render("pages/register");
+  res.render("pages/register");
 });
 
 app.post("/register", async (req, res) => {
-    // TODO Add password reentry
-    const username = req.body.username;
-    const password = req.body.password;
-    const password2 = req.body.password2;
+  // TODO Add password reentry
+  const username = req.body.username;
+  const password = req.body.password;
+  const password2 = req.body.password2;
 
-    const usernameRegex = /^[A-Za-z0-9_.\-]{6,50}$/; // Username allows letters, numbers, and characters _ . - (6-50 characters total)
-    const passwordRegex = /^[^\s';]{6,50}$/; // Password allows any character excluding whitespace, ', and ; (6-50 characters total))
+  const usernameRegex = /^[A-Za-z0-9_.\-]{6,50}$/; // Username allows letters, numbers, and characters _ . - (6-50 characters total)
+  const passwordRegex = /^[^\s';]{6,50}$/; // Password allows any character excluding whitespace, ', and ; (6-50 characters total))
 
-    if (! usernameRegex.test(username)) { // Invalid username
-        res.render("pages/register", {messageType: 'warning', messageText: 'Invalid username.  Username must be 4-50 characters and contain only letters, numbers, and characters _ . and -'});
-        return;
+  if (!usernameRegex.test(username)) { // Invalid username
+    res.render("pages/register", { messageType: 'warning', messageText: 'Invalid username.  Username must be 4-50 characters and contain only letters, numbers, and characters _ . and -' });
+    return;
+  }
+  // TODO Maybe add more password checking to guarentee safe passwords
+  if (!passwordRegex.test(password)) { // Invalid password
+    res.render("pages/register", { messageType: 'warning', messageText: 'Invalid password.  Password must be at least 6 characters and cannot contain spaces, \', or ;', usernameDefault: username });
+    return;
+  }
+
+  if (password != password2) { // Password doesn't match re-entered password
+    res.render("pages/register", { messageType: 'warning', messageText: 'Passwords must match', usernameDefault: username });
+    return;
+  }
+
+  const passwordHashed = await bcrypt.hash(password, 10); // 10 complexity, maybe increase this later
+
+  const FIND_USERNAME_QUERY = "SELECT * FROM users WHERE username = $1 LIMIT 1;";
+  const INSERT_USER_QUERY = "INSERT INTO users (username, password) VALUES ($1, $2);";
+
+  db.task(async () => {
+    let sameUsername = await db.any(FIND_USERNAME_QUERY, username);
+    if (sameUsername.length > 0) {
+      res.render("pages/register", { messageType: 'warning', messageText: 'Username is already in use, please choose a different username' });
+      return;
     }
-    // TODO Maybe add more password checking to guarentee safe passwords
-    if (! passwordRegex.test(password)) { // Invalid password
-        res.render("pages/register", {messageType: 'warning', messageText: 'Invalid password.  Password must be at least 6 characters and cannot contain spaces, \', or ;', usernameDefault: username});
-        return;
-    }
-    
-    if (password != password2) { // Password doesn't match re-entered password
-        res.render("pages/register", {messageType: 'warning', messageText: 'Passwords must match', usernameDefault: username});
-        return;
-    }
-    
-    const passwordHashed = await bcrypt.hash(password, 10); // 10 complexity, maybe increase this later
 
-    const FIND_USERNAME_QUERY = "SELECT * FROM users WHERE username = $1 LIMIT 1;";
-    const INSERT_USER_QUERY = "INSERT INTO users (username, password) VALUES ($1, $2);";
+    await db.none(INSERT_USER_QUERY, [username, passwordHashed]);
+    // TODO Call login post method with username and password information instead of going to dashboard
+    res.redirect("/dashboard");
 
-    db.task(async () => {
-        let sameUsername = await db.any(FIND_USERNAME_QUERY, username);
-        if (sameUsername.length > 0) {
-            res.render("pages/register", {messageType: 'warning', messageText: 'Username is already in use, please choose a different username'});
-            return;
-        }
+  }).catch(err => {
+    console.log("ERROR: An error occurred when trying to create an account:");
+    console.log(err);
+    res.render("pages/register", { messageType: 'error', messageText: 'An error has occurred, please try again later' });
+  });
 
-        await db.none(INSERT_USER_QUERY, [username, passwordHashed]);
-        // TODO Call login post method with username and password information instead of going to dashboard
-        res.redirect("/dashboard");
-
-    }).catch(err => {
-        console.log("ERROR: An error occurred when trying to create an account:");
-        console.log(err);
-        res.render("pages/register", {messageType: 'error', messageText: 'An error has occurred, please try again later'});
-    });
-    
 });
 
 // Routes for Dashboard
+// On every load, selects a random restaurant from database to put in recommendation
 
-app.get("/dashboard", (req, res) => {
-    res.render("pages/dashboard");
+app.get("/dashboard", async (req, res) => {
+
+  try {
+
+    const recommendationQuery = `
+    SELECT *
+    FROM restaurants
+    ORDER BY RANDOM()
+    LIMIT 1;
+    `;
+
+    const restaurant = await db.one(recommendationQuery);
+
+    res.render("pages/dashboard", { restaurant});
+
+  } catch(err) {
+
+    console.log("Error fetching random restaurant:", err);
+    res.render("pages/dashboard", {restaurant: null});
+
+  }
+
 });
 
 // Start server and keep it listening ------------------------------------------------------------------
