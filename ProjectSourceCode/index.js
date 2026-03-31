@@ -163,6 +163,12 @@ app.get("/dashboard", async (req, res) => {
 
 });
 
+// Routes for Map
+
+app.get("/map", (req, res) => {
+  res.render("pages/map");
+});
+
 // Start server and keep it listening ------------------------------------------------------------------
 app.listen(3000);
 console.log('Server is listening on port 3000');
