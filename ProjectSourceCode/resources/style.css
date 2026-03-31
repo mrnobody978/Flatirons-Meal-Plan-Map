@@ -1,0 +1,7 @@
+input:invalid:required {
+    border-color: #ae1616;
+}
+
+.validationText {
+    color: #ae1616;
+}

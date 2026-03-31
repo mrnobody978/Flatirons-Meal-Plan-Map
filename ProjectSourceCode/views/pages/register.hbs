@@ -1,0 +1,20 @@
+<!-- TODO: Make this look better -->
+<div class="container">
+    <h2>Register</h2>
+    <form action="/register" method="post" autocomplete="off">
+        <label for="usernameInput">Username: </label>
+        <input type="text" name="username" pattern="^[A-Za-z0-9_.\-]{4,50}$" id="usernameInput" onblur="checkUsername();" {{#if usernameDefault}}value="{{usernameDefault}}"{{/if}} required><br>
+        <small class="validationText" hidden id="usernameValidationText">Username must be 4-50 characters and can contain letters, numbers, and the characters _ . -<br></small>
+        <label for="passwordInput">Password: </label>
+        <input type="password" name="password" pattern="^[^\s';]{6,50}$" id="passwordInput" onblur="checkPassword();" {{#if passwordDefault}}value="{{passwordDefault}}"{{/if}} required>
+        <button type="button" id="passwordInputToggle" onclick="toggleViewPassword('passwordInput', self);">Show password</button><br>
+        <small class="validationText" hidden id="passwordValidationText">Password must be 6-50 characters and cannot contain spaces or '<br></small>
+        <label for="passwordInput2">Re-enter Password: </label>
+        <input type="password" name="password2" pattern="^[^\s';]{6,50}$" id="passwordInput2" onblur="checkPassword2();" required>
+        <button type="button" id="passwordInput2Toggle" onclick="toggleViewPassword('passwordInput2');">Show password</button><br>
+        <small class="validationText" hidden id="password2ValidationText">Passwords must match<br></small>
+        {{> warning}}
+        <button type="submit" onclick="displayErrorText()">Sign up</button>
+    </form>
+</div>
+<script src="/resources/register.js"></script>
