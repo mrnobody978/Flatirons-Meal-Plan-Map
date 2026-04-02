@@ -144,7 +144,11 @@ app.post("/register", nonauth, async (req, res) => {
 
     await db.none(INSERT_USER_QUERY, [username, passwordHashed]);
     // TODO Call login post method with username and password information instead of going to dashboard
-    res.redirect("/dashboard");
+    req.url = '/login';
+    req.method = 'POST';
+    app._router.handle(req, res, (req1, res1) => {
+        res1.redirect("/dashboard");
+    });
 
   }).catch(err => {
     console.log("ERROR: An error occurred when trying to create an account:");
