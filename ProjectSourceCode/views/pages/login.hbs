@@ -1,0 +1,14 @@
+<!-- TODO: Make this look better -->
+<div class="container">
+    <h2>Log in</h2>
+    <form action="/login" method="post" autocomplete="off">
+        <label for="usernameInput">Username: </label>
+        <input type="text" name="username" id="usernameInput" {{#if usernameDefault}}value="{{usernameDefault}}"{{/if}} required><br>
+        <label for="passwordInput">Password: </label>
+        <input type="password" name="password" id="passwordInput" {{#if passwordDefault}}value="{{passwordDefault}}"{{/if}} required>
+        <button type="button" id="passwordInputToggle" onclick="toggleViewPassword('passwordInput', self);">Show password</button><br>
+        {{> warning}}
+        <button type="submit" onclick="displayErrorText()">Log in</button>
+    </form>
+</div>
+<script src="/resources/login.js"></script>
