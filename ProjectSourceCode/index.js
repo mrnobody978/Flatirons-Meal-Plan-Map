@@ -11,6 +11,11 @@ const session = require('express-session'); // To set the session object. To sto
 const bcrypt = require('bcryptjs'); //  To hash passwords
 const axios = require('axios'); // To make HTTP requests from our server. We'll learn more about it in Part C.
 const { rmSync } = require('fs');
+const { time } = require('console');
+
+// Constants
+
+const BYPASS_LOGIN = false; // ONLY SET TO TRUE FOR TESTING AND DEVELOPMENT.  Bypasses requirement to log in.
 
 // Connect to database ---------------------------------------------------------------------------------
 
@@ -73,29 +78,42 @@ Handlebars.registerHelper('isEqual', (value1, value2) => {
 // Routes ------------------------------------------------------------------------------------------
 
 app.get("/", (req, res) => {
-  res.redirect("/register"); // TODO switch this to something else probably
+  res.redirect("/dashboard"); 
 });
 
 // For getting the style.css file and other stuff in resources
 app.get("/resources/:filename", (req, res) => {
     res.sendFile(__dirname + "/resources/" + req.params.filename);
+    
     // TODO Make this more secure
 });
 
+// Non-authenitcation middleware (opposite of auth)
+const nonauth = (req, res, next) => {
+    if (!BYPASS_LOGIN) {
+        if (req.session.user) {
+            // Default to login page.
+            return res.redirect('/dashboard');
+        }
+        // Maybe add max time here
+    }
+    next();
+};
+// Include nonauth in any pages that require being logged out
+
 // Routes for Registering
 
-app.get("/register", async (req, res) => {
+app.get("/register", nonauth, async (req, res) => {
   res.render("pages/register");
 });
 
-app.post("/register", async (req, res) => {
+const usernameRegex = /^[A-Za-z0-9_.\-]{4,50}$/; // Username allows letters, numbers, and characters _ . - (6-50 characters total)
+const passwordRegex = /^[^\s';]{6,50}$/; // Password allows any character excluding whitespace, ', and ; (6-50 characters total))
+app.post("/register", nonauth, async (req, res) => {
   // TODO Add password reentry
   const username = req.body.username;
   const password = req.body.password;
   const password2 = req.body.password2;
-
-  const usernameRegex = /^[A-Za-z0-9_.\-]{6,50}$/; // Username allows letters, numbers, and characters _ . - (6-50 characters total)
-  const passwordRegex = /^[^\s';]{6,50}$/; // Password allows any character excluding whitespace, ', and ; (6-50 characters total))
 
   if (!usernameRegex.test(username)) { // Invalid username
     res.render("pages/register", { messageType: 'warning', messageText: 'Invalid username.  Username must be 4-50 characters and contain only letters, numbers, and characters _ . and -' });
@@ -136,10 +154,75 @@ app.post("/register", async (req, res) => {
 
 });
 
+// Routes for logging in
+
+app.get("/login", nonauth, (req, res) => {
+    res.render("pages/login");
+});
+
+app.post("/login", nonauth, async (req, res) => {
+    const username = req.body.username;
+    const password = req.body.password;
+
+    // TODO Check that username doesn't contain characters like "
+
+    try {
+        const FIND_USER_QUERY = "SELECT * FROM users WHERE username = $1 LIMIT 1;";
+        const user = await db.any(FIND_USER_QUERY, username);
+        if (user == undefined || user.length == 0) { // Invalid username
+            res.render("pages/login", {messageType: 'warning', messageText: 'Invalid username or password', usernameDefault: username});
+            return;
+        }
+
+        if (! await bcrypt.compare(password, user[0].password)) {
+            // Invlaid password
+            res.render("pages/login", {messageType: 'warning', messageText: 'Invalid username or password', usernameDefault: username});
+            return;
+        } else { // Log in and redirect
+            user[0].password = "";
+            req.session.user = user[0];
+            req.session.save();
+            res.redirect("/dashboard");
+        }
+    } catch (err) {
+        console.log(err);
+        res.render("pages/login", {messageType: 'error', messageText: 'An error occurred, please try again later', usernameDefault: username});
+    }
+});
+
+// Authenitcation middleware
+const auth = (req, res, next) => {
+    if (!BYPASS_LOGIN) {
+        if (!req.session.user) {
+            // Default to login page.
+            return res.redirect('/login');
+        }
+        // Maybe add max time here
+    }
+    next();
+};
+// Include auth in any pages that require being logged in
+
+// Helper functions to get user info for logged in users, otherwise null
+function getUserID (req) { return (req.session.user) ? req.session.user[0].user_id : null; }
+function getUsername (req) { return (req.session.user) ? req.session.user[0].username : null; }
+
+// Routes for logging out
+
+app.get("/logout", auth, (req, res) => {
+    req.session.destroy(err => {
+        if (err) {
+            console.log(err);
+        }
+        res.render("pages/logout", {timeout: false});
+    });
+});
+
+
 // Routes for Dashboard
 // On every load, selects a random restaurant from database to put in recommendation
 
-app.get("/dashboard", async (req, res) => {
+app.get("/dashboard", auth, async (req, res) => {
 
   try {
 
@@ -165,7 +248,7 @@ app.get("/dashboard", async (req, res) => {
 
 // Routes for Map
 
-app.get("/map", (req, res) => {
+app.get("/map", auth, (req, res) => {
   res.render("pages/map");
 });
 
