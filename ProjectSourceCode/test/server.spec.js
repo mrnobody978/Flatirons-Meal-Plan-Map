@@ -30,3 +30,27 @@ describe('Server!', () => {
 // *********************** TODO: WRITE 2 UNIT TESTCASES **************************
 
 // ********************************************************************************
+
+it('positive : /register', done => {
+  chai
+    .request(server)
+    .post('/register')
+    .send({ username: 'marietest', password: 'password', password2: 'password' })
+    .end((err, res) => {
+      expect(res).to.have.status(200); // or 302 depending on chai config
+      expect(res).to.redirect;         // optional
+      done();
+    });
+});
+
+it('negative : /register. Checking password does not match', done => {
+  chai
+    .request(server)
+    .post('/register')
+    .send({ username: 'marietest', password: 'password', password2: 'badpassword' })
+    .end((err, res) => {
+      expect(res).to.have.status(200);
+      expect(res.text).to.include('Passwords must match');
+      done();
+    })
+})
