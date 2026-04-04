@@ -1,7 +1,9 @@
 var map = L.map('map').setView([40.015, -105.27], 13);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  referrerPolicy: 'strict-origin',
+  maxZoom: 18,
 }).addTo(map);
 
 // Sample pin in Boulder
