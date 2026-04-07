@@ -17,6 +17,16 @@ async function geocode(address) {
   return null;
 }
 
+// fetch favorite restaurants
+let favoriteIds = new Set();
+
+async function loadFavorites() {
+  const res = await fetch('/api/favorites');
+  const favorites = await res.json();
+
+  favoriteIds = new Set(favorites.map(r => r.id));
+}
+
 // Fetch restaurants from API and place pins on the map
 async function loadRestaurantPins() {
   try {
@@ -35,7 +45,9 @@ async function loadRestaurantPins() {
             r.address +
             (r.phone ? '<br>' + r.phone : '') +
             // favorite restaurant button
-            `<br><button onclick="favoriteRestaurant(${r.id})">Favorite</button>`
+            `<br><button onclick="toggleFavorite(${r.id})">
+            ${favoriteIds.has(r.id) ? 'Unfavorite' : 'Favorite'}
+            </button>`
           );
       }
     }
@@ -44,7 +56,12 @@ async function loadRestaurantPins() {
   }
 }
 
-loadRestaurantPins();
+async function initMap() {
+  await loadFavorites();
+  await loadRestaurantPins();
+}
+
+initMap();
 
 // Real-time user location tracking
 var userMarker = null;
@@ -74,25 +91,35 @@ if (navigator.geolocation) {
   );
 }
 
-// When a user favorites a restaurant, it gets added to the database
-async function favoriteRestaurant(id) {
+// calling routes to favorite/unfavorite a restaurant
+async function toggleFavorite(id) {
   try {
-    const res = await fetch("/api/favorites", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ restaurant_id: id })
-    });
+    if (favoriteIds.has(id)) {
+      // UNFAVORITE
+      await fetch(`/api/favorites/${id}`, {
+        method: 'DELETE'
+      });
 
-    if (res.ok) {
-      alert("Added to favorites!");
+      favoriteIds.delete(id);
+      alert("Removed from favorites");
+
     } else {
-      alert("Failed to favorite");
+      // FAVORITE
+      await fetch('/api/favorites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ restaurant_id: id })
+      });
+
+      favoriteIds.add(id);
+      alert("Added to favorites");
     }
+
+    // we could use this to reload the UI quickly but it resets the whole page
+    // location.reload();
 
   } catch (err) {
     console.error(err);
-    alert("Error");
+    alert("Error updating favorite");
   }
 }
