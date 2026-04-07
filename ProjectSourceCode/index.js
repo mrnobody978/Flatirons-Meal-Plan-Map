@@ -257,6 +257,17 @@ app.get("/map", auth, (req, res) => {
   res.render("pages/map");
 });
 
+// API endpoint to get all restaurants
+app.get("/api/restaurants", auth, async (req, res) => {
+  try {
+    const restaurants = await db.any("SELECT * FROM restaurants;");
+    res.json(restaurants);
+  } catch (err) {
+    console.log("Error fetching restaurants:", err);
+    res.status(500).json({ error: "Failed to fetch restaurants" });
+  }
+});
+
 // route for scraping data
 app.get('/scrape', auth, async (req, res) => {
   try {
@@ -264,9 +275,9 @@ app.get('/scrape', auth, async (req, res) => {
 
     for (const r of restaurants) {
       await db.none(
-        `INSERT INTO restaurants (name, website, address, image_path)
+        `INSERT INTO restaurants (name, address, phone, image_path)
          VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`,
-        [r.name, r.phone, r.address, r.image_path]
+        [r.name, r.address, r.phone, r.image_path]
       );
     }
 
@@ -292,9 +303,9 @@ app.get('/welcome', (req, res) => {
 
     for (const r of restaurants) {
       await db.none(
-        `INSERT INTO restaurants (name, website, address, image_path)
+        `INSERT INTO restaurants (name, address, phone, image_path)
          VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`,
-        [r.name, r.phone, r.address, r.image_path]
+        [r.name, r.address, r.phone, r.image_path]
       );
     }
 
