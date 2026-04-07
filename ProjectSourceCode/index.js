@@ -304,7 +304,7 @@ app.get('/scrape', auth, async (req, res) => {
 // Routes for favoriting restaurants
 app.get("/api/favorites", auth, async (req, res) => {
 
-  const userId = getUserID(req);
+  const userId = req.session.user.user_id;
 
   try {
 
@@ -345,6 +345,30 @@ app.post("/api/favorites", auth, async (req, res) => {
     console.log("Error adding favorite:", err);
     res.status(500).json({ error: "Failed to add favorite" });
   }
+});
+
+// API endpoint to delete a restaurant from favorites
+app.delete("/api/favorites/:id", auth, async (req, res) => {
+
+  const userId = req.session.user.user_id;
+  const restaurantId = parseInt(req.params.id, 10);
+
+  try {
+
+    await db.none(
+      `DELETE FROM users_to_restaurants
+      WHERE user_id = $1 AND restaurant_id = $2`,
+      [userId, restaurantId]
+    );
+
+    res.json({ success: true });
+
+    } catch (err) {
+      console.log("Error removing favorite:", err);
+      res.status(500).json({ error: "Failed to remove favorite" });
+
+    }
+
 });
 
 //Routes for Tests
