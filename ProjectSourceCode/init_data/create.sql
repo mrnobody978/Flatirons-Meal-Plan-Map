@@ -17,5 +17,6 @@ CREATE TABLE IF NOT EXISTS restaurants (
 -- if a user has a favorite restaurant, their user_id and the restaurant.id will appear here
 CREATE TABLE IF NOT EXISTS users_to_restaurants (
     user_id INT NOT NULL,
-    restaurant_id INT NOT NULL
+    restaurant_id INT NOT NULL,
+    PRIMARY KEY (user_id, restaurant_id)
 );
