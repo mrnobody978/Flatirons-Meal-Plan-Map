@@ -12,6 +12,7 @@ const bcrypt = require('bcryptjs'); //  To hash passwords
 const axios = require('axios'); // To make HTTP requests from our server. We'll learn more about it in Part C.
 const { rmSync } = require('fs');
 const { time } = require('console');
+const { scrapeRestaurants } = require('./resources/scraper');  // To scrape restaurant data from the web
 
 // Constants
 
@@ -256,10 +257,52 @@ app.get("/map", auth, (req, res) => {
   res.render("pages/map");
 });
 
+// route for scraping data
+app.get('/scrape', auth, async (req, res) => {
+  try {
+    const restaurants = await scrapeRestaurants();
+
+    for (const r of restaurants) {
+      await db.none(
+        `INSERT INTO restaurants (name, website, address, image_path)
+         VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`,
+        [r.name, r.phone, r.address, r.image_path]
+      );
+    }
+
+    res.json({ status: 'success', inserted: restaurants.length, data: restaurants });
+
+  } catch (err) {
+    console.log('Scrape error:', err);
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+});
+
 //Routes for Tests
 app.get('/welcome', (req, res) => {
   res.json({status: 'success', message: 'Welcome!'});
 });
+
+//Automatically scrapes restaurant info when server starts
+// Auto-scrape restaurants on server startup
+(async () => {
+  try {
+    console.log('Scraping restaurants...');
+    const restaurants = await scrapeRestaurants();
+
+    for (const r of restaurants) {
+      await db.none(
+        `INSERT INTO restaurants (name, website, address, image_path)
+         VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`,
+        [r.name, r.phone, r.address, r.image_path]
+      );
+    }
+
+    console.log(`Scraped and inserted ${restaurants.length} restaurants.`);
+  } catch (err) {
+    console.log('Auto-scrape error:', err.message);
+  }
+})();
 
 // Start server and keep it listening ------------------------------------------------------------------
 module.exports = app.listen(3000);
