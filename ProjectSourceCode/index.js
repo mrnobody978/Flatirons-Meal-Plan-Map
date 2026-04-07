@@ -79,26 +79,26 @@ Handlebars.registerHelper('isEqual', (value1, value2) => {
 // Routes ------------------------------------------------------------------------------------------
 
 app.get("/", (req, res) => {
-  res.redirect("/dashboard"); 
+  res.redirect("/dashboard");
 });
 
 // For getting the style.css file and other stuff in resources
 app.get("/resources/:filename", (req, res) => {
-    res.sendFile(__dirname + "/resources/" + req.params.filename);
-    
-    // TODO Make this more secure
+  res.sendFile(__dirname + "/resources/" + req.params.filename);
+
+  // TODO Make this more secure
 });
 
 // Non-authenitcation middleware (opposite of auth)
 const nonauth = (req, res, next) => {
-    if (!BYPASS_LOGIN) {
-        if (req.session.user) {
-            // Default to login page.
-            return res.redirect('/dashboard');
-        }
-        // Maybe add max time here
+  if (!BYPASS_LOGIN) {
+    if (req.session.user) {
+      // Default to login page.
+      return res.redirect('/dashboard');
     }
-    next();
+    // Maybe add max time here
+  }
+  next();
 };
 // Include nonauth in any pages that require being logged out
 
@@ -148,7 +148,7 @@ app.post("/register", nonauth, async (req, res) => {
     req.url = '/login';
     req.method = 'POST';
     app._router.handle(req, res, (req1, res1) => {
-        res1.redirect("/dashboard");
+      res1.redirect("/dashboard");
     });
 
   }).catch(err => {
@@ -162,65 +162,65 @@ app.post("/register", nonauth, async (req, res) => {
 // Routes for logging in
 
 app.get("/login", nonauth, (req, res) => {
-    res.render("pages/login");
+  res.render("pages/login");
 });
 
 app.post("/login", nonauth, async (req, res) => {
-    const username = req.body.username;
-    const password = req.body.password;
+  const username = req.body.username;
+  const password = req.body.password;
 
-    // TODO Check that username doesn't contain characters like "
+  // TODO Check that username doesn't contain characters like "
 
-    try {
-        const FIND_USER_QUERY = "SELECT * FROM users WHERE username = $1 LIMIT 1;";
-        const user = await db.any(FIND_USER_QUERY, username);
-        if (user == undefined || user.length == 0) { // Invalid username
-            res.render("pages/login", {messageType: 'warning', messageText: 'Invalid username or password', usernameDefault: username});
-            return;
-        }
-
-        if (! await bcrypt.compare(password, user[0].password)) {
-            // Invlaid password
-            res.render("pages/login", {messageType: 'warning', messageText: 'Invalid username or password', usernameDefault: username});
-            return;
-        } else { // Log in and redirect
-            user[0].password = "";
-            req.session.user = user[0];
-            req.session.save();
-            res.redirect("/dashboard");
-        }
-    } catch (err) {
-        console.log(err);
-        res.render("pages/login", {messageType: 'error', messageText: 'An error occurred, please try again later', usernameDefault: username});
+  try {
+    const FIND_USER_QUERY = "SELECT * FROM users WHERE username = $1 LIMIT 1;";
+    const user = await db.any(FIND_USER_QUERY, username);
+    if (user == undefined || user.length == 0) { // Invalid username
+      res.render("pages/login", { messageType: 'warning', messageText: 'Invalid username or password', usernameDefault: username });
+      return;
     }
+
+    if (! await bcrypt.compare(password, user[0].password)) {
+      // Invlaid password
+      res.render("pages/login", { messageType: 'warning', messageText: 'Invalid username or password', usernameDefault: username });
+      return;
+    } else { // Log in and redirect
+      user[0].password = "";
+      req.session.user = user[0];
+      req.session.save();
+      res.redirect("/dashboard");
+    }
+  } catch (err) {
+    console.log(err);
+    res.render("pages/login", { messageType: 'error', messageText: 'An error occurred, please try again later', usernameDefault: username });
+  }
 });
 
 // Authenitcation middleware
 const auth = (req, res, next) => {
-    if (!BYPASS_LOGIN) {
-        if (!req.session.user) {
-            // Default to login page.
-            return res.redirect('/login');
-        }
-        // Maybe add max time here
+  if (!BYPASS_LOGIN) {
+    if (!req.session.user) {
+      // Default to login page.
+      return res.redirect('/login');
     }
-    next();
+    // Maybe add max time here
+  }
+  next();
 };
 // Include auth in any pages that require being logged in
 
 // Helper functions to get user info for logged in users, otherwise null
-function getUserID (req) { return (req.session.user) ? req.session.user[0].user_id : null; }
-function getUsername (req) { return (req.session.user) ? req.session.user[0].username : null; }
+function getUserID(req) { return (req.session.user) ? req.session.user[0].user_id : null; }
+function getUsername(req) { return (req.session.user) ? req.session.user[0].username : null; }
 
 // Routes for logging out
 
 app.get("/logout", auth, (req, res) => {
-    req.session.destroy(err => {
-        if (err) {
-            console.log(err);
-        }
-        res.render("pages/logout", {timeout: false});
-    });
+  req.session.destroy(err => {
+    if (err) {
+      console.log(err);
+    }
+    res.render("pages/logout", { timeout: false });
+  });
 });
 
 
@@ -231,6 +231,8 @@ app.get("/dashboard", auth, async (req, res) => {
 
   try {
 
+    const userId = req.session.user.user_id;
+
     const recommendationQuery = `
     SELECT *
     FROM restaurants
@@ -238,14 +240,24 @@ app.get("/dashboard", auth, async (req, res) => {
     LIMIT 1;
     `;
 
+    const favoritesQuery = `
+    SELECT r.*
+    FROM restaurants r
+    JOIN users_to_restaurants ur
+    ON r.id = ur.restaurant_id
+    WHERE ur.user_id = $1
+    ORDER BY r.name;
+    `;
+
     const restaurant = await db.one(recommendationQuery);
+    const favorites = await db.any(favoritesQuery, [userId]);
 
-    res.render("pages/dashboard", { restaurant});
+    res.render("pages/dashboard", { restaurant, favorites });
 
-  } catch(err) {
+  } catch (err) {
 
-    console.log("Error fetching random restaurant:", err);
-    res.render("pages/dashboard", {restaurant: null});
+    console.log("Error fetching dashboard data:", err);
+    res.render("pages/dashboard", { restaurant: null, favorites: [] });
 
   }
 
@@ -289,9 +301,55 @@ app.get('/scrape', auth, async (req, res) => {
   }
 });
 
+// Routes for favoriting restaurants
+app.get("/api/favorites", auth, async (req, res) => {
+
+  const userId = getUserID(req);
+
+  try {
+
+    const favorites = await db.any(
+      `SELECT r.*
+      FROM restaurants r
+      JOIN users_to_restaurants ur
+      ON r.id = ur.restaurant_id
+      WHERE ur.user_id = $1`,
+      [userId]
+    );
+
+    res.json(favorites);
+
+  } catch (err) {
+
+    console.log("error fetching favorites:", err);
+    res.status(500).json({ error: "Failed to fetch favorites" });
+
+  }
+
+});
+
+// API endpoint to favorite a restaurant
+app.post("/api/favorites", auth, async (req, res) => {
+  const userId = req.session.user.user_id;
+  const { restaurant_id } = req.body;
+
+  try {
+    await db.none(
+      `INSERT INTO users_to_restaurants (user_id, restaurant_id)
+       VALUES ($1, $2)`,
+      [userId, restaurant_id]
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.log("Error adding favorite:", err);
+    res.status(500).json({ error: "Failed to add favorite" });
+  }
+});
+
 //Routes for Tests
 app.get('/welcome', (req, res) => {
-  res.json({status: 'success', message: 'Welcome!'});
+  res.json({ status: 'success', message: 'Welcome!' });
 });
 
 //Automatically scrapes restaurant info when server starts

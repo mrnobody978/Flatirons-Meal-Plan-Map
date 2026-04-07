@@ -33,7 +33,9 @@ async function loadRestaurantPins() {
           .bindPopup(
             '<b>' + r.name + '</b><br>' +
             r.address +
-            (r.phone ? '<br>' + r.phone : '')
+            (r.phone ? '<br>' + r.phone : '') +
+            // favorite restaurant button
+            `<br><button onclick="favoriteRestaurant(${r.id})">Favorite</button>`
           );
       }
     }
@@ -70,4 +72,27 @@ if (navigator.geolocation) {
     },
     { enableHighAccuracy: true }
   );
+}
+
+// When a user favorites a restaurant, it gets added to the database
+async function favoriteRestaurant(id) {
+  try {
+    const res = await fetch("/api/favorites", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ restaurant_id: id })
+    });
+
+    if (res.ok) {
+      alert("Added to favorites!");
+    } else {
+      alert("Failed to favorite");
+    }
+
+  } catch (err) {
+    console.error(err);
+    alert("Error");
+  }
 }
