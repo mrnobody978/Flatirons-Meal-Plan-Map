@@ -6,11 +6,13 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS restaurants (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
+    name VARCHAR(100) NOT NULL UNIQUE,
     website VARCHAR(100), -- must be in format https://www.example.com
     address VARCHAR(100) NOT NULL,
     phone VARCHAR(20),
-    image_path VARCHAR(100) NOT NULL -- format: /resources/default_restaurant.jpg
+    image_path VARCHAR(100) NOT NULL, -- format: /resources/default_restaurant.jpg
+    latitude FLOAT,
+    longitude FLOAT
 );
 
 -- used to favorite restaurants

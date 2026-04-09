@@ -35,10 +35,11 @@ it('positive : /register', done => {
   chai
     .request(server)
     .post('/register')
-    .send({ username: 'marietest', password: 'password', password2: 'password' })
+    .send({ username: 'marietest' + Math.random(), password: 'password', password2: 'password' })
     .end((err, res) => {
-      expect(res).to.have.status(200); // or 302 depending on chai config
-      expect(res).to.redirect;         // optional
+      expect(res).to.have.status(200);
+      // Since successful registration now redirects to /login, we check if we landed there
+      expect(res.text).to.include('Log in'); 
       done();
     });
 });
