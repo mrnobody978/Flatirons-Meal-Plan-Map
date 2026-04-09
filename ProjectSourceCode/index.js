@@ -209,8 +209,11 @@ const auth = (req, res, next) => {
 // Include auth in any pages that require being logged in
 
 // Helper functions to get user info for logged in users, otherwise null
-function getUserID(req) { return (req.session.user) ? req.session.user[0].user_id : null; }
-function getUsername(req) { return (req.session.user) ? req.session.user[0].username : null; }
+function getUserID(req) { return (req.session.user) ? req.session.user.user_id : null; }
+function getUsername(req) { return (req.session.user) ? req.session.user.username : null; }
+function renderLoggedIn(req, res, page, args) {
+    res.render(page, Object.assign( {user: getUserID(req), username: getUsername(req)}, args));
+};
 
 // Routes for logging out
 
@@ -219,8 +222,8 @@ app.get("/logout", auth, (req, res) => {
     if (err) {
       console.log(err);
     }
-    res.render("pages/logout", { timeout: false });
   });
+  res.render("pages/logout", { timeout: false });
 });
 
 
@@ -252,12 +255,12 @@ app.get("/dashboard", auth, async (req, res) => {
     const restaurant = await db.one(recommendationQuery);
     const favorites = await db.any(favoritesQuery, [userId]);
 
-    res.render("pages/dashboard", { restaurant, favorites });
+    renderLoggedIn(req, res, "pages/dashboard", { restaurant, favorites });
 
   } catch (err) {
 
     console.log("Error fetching dashboard data:", err);
-    res.render("pages/dashboard", { restaurant: null, favorites: [] });
+    renderLoggedIn(req, res, "pages/dashboard", { restaurant: null, favorites: [] });
 
   }
 
@@ -266,7 +269,7 @@ app.get("/dashboard", auth, async (req, res) => {
 // Routes for Map
 
 app.get("/map", auth, (req, res) => {
-  res.render("pages/map");
+  renderLoggedIn(req, res, "pages/map");
 });
 
 // API endpoint to get all restaurants
