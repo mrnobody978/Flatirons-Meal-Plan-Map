@@ -134,22 +134,23 @@ app.post("/register", nonauth, async (req, res) => {
   const passwordHashed = await bcrypt.hash(password, 10); // 10 complexity, maybe increase this later
 
   const FIND_USERNAME_QUERY = "SELECT * FROM users WHERE username = $1 LIMIT 1;";
-  const INSERT_USER_QUERY = "INSERT INTO users (username, password) VALUES ($1, $2);";
+  const INSERT_USER_QUERY = "INSERT INTO users (username, password) VALUES ($1, $2) RETURNING *;";
 
-  db.task(async () => {
-    let sameUsername = await db.any(FIND_USERNAME_QUERY, username);
+  db.task(async (t) => {
+    let sameUsername = await t.any(FIND_USERNAME_QUERY, username);
     if (sameUsername.length > 0) {
       res.render("pages/register", { messageType: 'warning', messageText: 'Username is already in use, please choose a different username' });
       return;
     }
 
-    await db.none(INSERT_USER_QUERY, [username, passwordHashed]);
-    // TODO Call login post method with username and password information instead of going to dashboard
-    req.url = '/login';
-    req.method = 'POST';
-    app._router.handle(req, res, (req1, res1) => {
-      res1.redirect("/dashboard");
-    });
+    const newUser = await t.one(INSERT_USER_QUERY, [username, passwordHashed]);
+    
+    // Auto-login: Set the session user
+    newUser.password = ""; // Clear password for security
+    req.session.user = newUser;
+    req.session.save();
+
+    res.redirect("/dashboard");
 
   }).catch(err => {
     console.log("ERROR: An error occurred when trying to create an account:");
@@ -272,6 +273,32 @@ app.get("/map", auth, (req, res) => {
   renderLoggedIn(req, res, "pages/map");
 });
 
+// Helper to geocode an address using Nominatim (free, no API key needed)
+async function geocode(address) {
+  try {
+    const query = `${address}, Boulder, CO`;
+    // Bounding box for the Greater Boulder area [left, top, right, bottom]
+    const viewbox = '-105.301,40.094,-105.178,39.957';
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&viewbox=${viewbox}&bounded=1`;
+
+    const response = await axios.get(url, {
+      headers: {
+        'User-Agent': 'FlatironsMealPlanMap/1.0'
+      }
+    });
+
+    if (response.data && response.data.length > 0) {
+      return {
+        lat: parseFloat(response.data[0].lat),
+        lng: parseFloat(response.data[0].lon)
+      };
+    }
+  } catch (err) {
+    console.log('Geocoding error for address:', address, err.message);
+  }
+  return null;
+}
+
 // API endpoint to get all restaurants
 app.get("/api/restaurants", auth, async (req, res) => {
   try {
@@ -287,16 +314,28 @@ app.get("/api/restaurants", auth, async (req, res) => {
 app.get('/scrape', auth, async (req, res) => {
   try {
     const restaurants = await scrapeRestaurants();
+    let count = 0;
 
     for (const r of restaurants) {
+      // Nominatim requires ~1 second between requests
+      await new Promise(resolve => setTimeout(resolve, 1100));
+      const coords = await geocode(r.address);
+
       await db.none(
-        `INSERT INTO restaurants (name, address, phone, image_path)
-         VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`,
-        [r.name, r.address, r.phone, r.image_path]
+        `INSERT INTO restaurants (name, address, phone, image_path, latitude, longitude)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         ON CONFLICT (name) DO UPDATE 
+         SET address = EXCLUDED.address, 
+             phone = EXCLUDED.phone, 
+             image_path = EXCLUDED.image_path,
+             latitude = EXCLUDED.latitude,
+             longitude = EXCLUDED.longitude`,
+        [r.name, r.address, r.phone, r.image_path, coords ? coords.lat : null, coords ? coords.lng : null]
       );
+      count++;
     }
 
-    res.json({ status: 'success', inserted: restaurants.length, data: restaurants });
+    res.json({ status: 'success', processed: count, data: restaurants });
 
   } catch (err) {
     console.log('Scrape error:', err);
@@ -382,19 +421,51 @@ app.get('/welcome', (req, res) => {
 //Automatically scrapes restaurant info when server starts
 // Auto-scrape restaurants on server startup
 (async () => {
+  // Don't run during tests to speed things up
+  if (process.env.NODE_ENV === 'test') {
+    return;
+  }
+
   try {
-    console.log('Scraping restaurants...');
+    console.log('Checking for new restaurants to scrape and geocode...');
     const restaurants = await scrapeRestaurants();
+    
+    // Fetch all existing names and their coordinates in one query
+    const existingData = await db.any('SELECT name, latitude, longitude FROM restaurants');
+    const existingMap = new Map(existingData.map(r => [r.name, r]));
 
     for (const r of restaurants) {
-      await db.none(
-        `INSERT INTO restaurants (name, address, phone, image_path)
-         VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`,
-        [r.name, r.address, r.phone, r.image_path]
-      );
+      const existing = existingMap.get(r.name);
+
+      if (!existing || existing.latitude === null || existing.longitude === null) {
+        console.log(`Geocoding new or missing: ${r.name}`);
+        // Nominatim requires ~1 second between requests
+        await new Promise(resolve => setTimeout(resolve, 1100));
+        const coords = await geocode(r.address);
+
+        await db.none(
+          `INSERT INTO restaurants (name, address, phone, image_path, latitude, longitude)
+           VALUES ($1, $2, $3, $4, $5, $6)
+           ON CONFLICT (name) DO UPDATE 
+           SET address = EXCLUDED.address, 
+               phone = EXCLUDED.phone, 
+               image_path = EXCLUDED.image_path,
+               latitude = EXCLUDED.latitude,
+               longitude = EXCLUDED.longitude`,
+          [r.name, r.address, r.phone, r.image_path, coords ? coords.lat : null, coords ? coords.lng : null]
+        );
+      } else {
+        // Just update basic info if it already has coordinates (much faster)
+        await db.none(
+          `UPDATE restaurants 
+           SET address = $2, phone = $3, image_path = $4
+           WHERE name = $1`,
+          [r.name, r.address, r.phone, r.image_path]
+        );
+      }
     }
 
-    console.log(`Scraped and inserted ${restaurants.length} restaurants.`);
+    console.log(`Scraped and processed ${restaurants.length} restaurants.`);
   } catch (err) {
     console.log('Auto-scrape error:', err.message);
   }
