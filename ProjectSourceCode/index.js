@@ -13,6 +13,7 @@ const axios = require('axios'); // To make HTTP requests from our server. We'll 
 const { rmSync } = require('fs');
 const { time } = require('console');
 const { scrapeRestaurants } = require('./resources/scraper');  // To scrape restaurant data from the web
+const { scrapeDeals } = require('./resources/dealScraper'); // To scrape weekly deal data from website
 
 // Constants
 
@@ -144,7 +145,7 @@ app.post("/register", nonauth, async (req, res) => {
     }
 
     const newUser = await t.one(INSERT_USER_QUERY, [username, passwordHashed]);
-    
+
     // Auto-login: Set the session user
     newUser.password = ""; // Clear password for security
     req.session.user = newUser;
@@ -213,7 +214,7 @@ const auth = (req, res, next) => {
 function getUserID(req) { return (req.session.user) ? req.session.user.user_id : null; }
 function getUsername(req) { return (req.session.user) ? req.session.user.username : null; }
 function renderLoggedIn(req, res, page, args) {
-    res.render(page, Object.assign( {user: getUserID(req), username: getUsername(req)}, args));
+  res.render(page, Object.assign({ user: getUserID(req), username: getUsername(req) }, args));
 };
 
 // Routes for logging out
@@ -253,15 +254,24 @@ app.get("/dashboard", auth, async (req, res) => {
     ORDER BY r.name;
     `;
 
+    // weekly deal
+    const dealQuery = `
+    SELECT *
+    FROM deals
+    WHERE CURRENT_DATE BETWEEN start_date AND end_date
+    LIMIT 1;
+    `;
+
     const restaurant = await db.one(recommendationQuery);
     const favorites = await db.any(favoritesQuery, [userId]);
+    const deal = await db.oneOrNone(dealQuery);
 
-    renderLoggedIn(req, res, "pages/dashboard", { restaurant, favorites });
+    renderLoggedIn(req, res, "pages/dashboard", { restaurant, favorites, deal });
 
   } catch (err) {
 
     console.log("Error fetching dashboard data:", err);
-    renderLoggedIn(req, res, "pages/dashboard", { restaurant: null, favorites: [] });
+    renderLoggedIn(req, res, "pages/dashboard", { restaurant: null, favorites: [], deal: null });
 
   }
 
@@ -343,6 +353,77 @@ app.get('/scrape', auth, async (req, res) => {
   }
 });
 
+// Route for scraping weekly deals
+app.get('/scrape-deals', auth, async (req, res) => {
+  try {
+    const deals = await scrapeDeals();
+    let count = 0;
+
+    for (const d of deals) {
+
+      await db.none(
+
+        `INSERT INTO deals (start_date, end_date, name, note, address, image_path)
+        Values($1, $2, $3, $4, $5, $6)
+        ON CONFLICT(start_date, name) DO UPDATE
+        SET note = EXCLUDED.note,
+        address = EXCLUDED.address,
+        image_path = EXCLUDED.image_path`,
+        [d.start_date, d.end_date, d.name, d.note, d.address, d.image_path]
+
+      );
+
+      count++;
+
+    }
+
+    res.json({ status: 'success', processed: count, data: deals });
+
+  } catch (err) {
+
+    console.log('Deal scrape error:', err);
+    res.status(500).json({ status: 'error', message: err.message })
+
+  }
+
+});
+
+// Scrape restaurants on start up
+(async () => {
+
+  if (process.env.NODE_ENV === 'test') return;
+
+  try {
+
+    console.log('Scraping weekly deals...');
+    const deals = await scrapeDeals();
+
+    for (const d of deals) {
+
+      await db.none(
+
+        `INSERT INTO deals (start_date, end_date, name, note, address, image_path)
+        Values($1, $2, $3, $4, $5, $6)
+        ON CONFLICT(start_date, name) DO UPDATE
+        SET note = EXCLUDED.note,
+        address = EXCLUDED.address,
+        image_path = EXCLUDED.image_path`,
+        [d.start_date, d.end_date, d.name, d.note, d.address, d.image_path]
+
+      );
+
+    }
+
+    console.log(`Processed ${deals.length} deals.`);
+
+  } catch (err) {
+
+    console.log('Auto deal scrape error:', err.message);
+
+  }
+
+})();
+
 // Routes for favoriting restaurants
 app.get("/api/favorites", auth, async (req, res) => {
 
@@ -405,11 +486,11 @@ app.delete("/api/favorites/:id", auth, async (req, res) => {
 
     res.json({ success: true });
 
-    } catch (err) {
-      console.log("Error removing favorite:", err);
-      res.status(500).json({ error: "Failed to remove favorite" });
+  } catch (err) {
+    console.log("Error removing favorite:", err);
+    res.status(500).json({ error: "Failed to remove favorite" });
 
-    }
+  }
 
 });
 
@@ -429,7 +510,7 @@ app.get('/welcome', (req, res) => {
   try {
     console.log('Checking for new restaurants to scrape and geocode...');
     const restaurants = await scrapeRestaurants();
-    
+
     // Fetch all existing names and their coordinates in one query
     const existingData = await db.any('SELECT name, latitude, longitude FROM restaurants');
     const existingMap = new Map(existingData.map(r => [r.name, r]));
