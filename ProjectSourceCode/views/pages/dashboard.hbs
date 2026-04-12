@@ -45,7 +45,7 @@
 
           <div class="col-6">
             <div class="bg-light p-3 rounded-3 shadow-sm h-100">
-              <h5>Restaurant Recommendation</h5>
+              <h5>Random Recommendation</h5>
               {{#if restaurant}}
               <img src="{{restaurant.image_path}}" class="img-fluid">
               <div class="text-start p-2">
@@ -57,6 +57,22 @@
               </div>
               {{else}}
               <p>No restaurant available.</p>
+              {{/if}}
+              <h5>Weekly Deal</h5>
+              {{#if deal}}
+              <img src="{{deal.image_path}}" class="img-fluid">
+              <div class="text-start p-2">
+                <p>
+                  <b>{{deal.name}}</b>
+                  <br>{{deal.address}}<br>
+                  {{#if deal.note}}
+                  <span>{{deal.note}}</span><br>
+                  {{/if}}
+                  25% off all week!
+                </p>
+              </div>
+              {{else}}
+              <p>No weekly deal available.</p>
               {{/if}}
             </div>
           </div>

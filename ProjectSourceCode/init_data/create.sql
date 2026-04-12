@@ -22,3 +22,14 @@ CREATE TABLE IF NOT EXISTS users_to_restaurants (
     restaurant_id INT NOT NULL,
     PRIMARY KEY (user_id, restaurant_id)
 );
+
+CREATE TABLE IF NOT EXISTS deals (
+    id SERIAL PRIMARY KEY,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    note VARCHAR(100),
+    address VARCHAR(100) NOT NULL,
+    image_path VARCHAR(100) NOT NULL,
+    UNIQUE(start_date, name)
+);
