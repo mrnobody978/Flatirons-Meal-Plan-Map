@@ -34,12 +34,22 @@
             </li>
           </ul>
           <div class="nav-item me-1">
-            <a class="nav-link fw-semibold" href="/logout">Logout</a>
+            <div class="dropdown">
+              <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <img src="{{#if userImg}}{{userImg}}{{else}}/resources/profile.png{{/if}}" alt="Profile Image" class="profileImage" height="48" width="48">
+              </button>
+              <ul class="dropdown-menu">
+                <li><b class="dropdown-item fw-bold">{{#if realName}}{{realName}}{{else}}{{username}}{{/if}}</b></li>
+                <li><a class="dropdown-item" href="/profile">Profile</a></li>
+                <li><a class="dropdown-item" href="/friends">Friends</a></li>
+                <li><a class="dropdown-item" href="/logout">Logout</a></li>
+              </ul>
+            </div>
           </div>
         {{else}}
           <!-- Links shown only when logged out -->
           <ul class="navbar-nav me-auto"></ul>
-          <div class="d-flex gap-2">
+          <div class="d-flex gap-4">
             <a class="nav-link fw-semibold {{#if (isEqual currentPage 'login')}}active{{/if}}" href="/login">Login</a>
             <a class="nav-link fw-semibold {{#if (isEqual currentPage 'register')}}active{{/if}}" href="/register">Register</a>
           </div>

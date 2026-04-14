@@ -1,7 +1,16 @@
 CREATE TABLE IF NOT EXISTS users (
     user_id SERIAL PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
-    password VARCHAR(60) NOT NULL
+    password VARCHAR(60) NOT NULL,
+    real_name VARCHAR(50),
+    image_path VARCHAR(50)
+);
+
+-- Lists friends.  When entering data, enter both (friend1, friend2) and (friend2, friend1).
+CREATE TABLE IF NOT EXISTS friends (
+    user_id_1 INT NOT NULL,
+    user_id_2 INT NOT NULL,
+    PRIMARY KEY (user_id_1, user_id_2)
 );
 
 CREATE TABLE IF NOT EXISTS restaurants (
