@@ -40,7 +40,28 @@
               {{else}}
               <p class="mt-3">You have no favorited restaurants yet.</p>
               {{/if}}
+
+              <h5 class="mt-4">Most Favorited</h5>
+
+              {{#if topFavorites.length}}
+              <div class="text-start mt-3">
+                {{#each topFavorites}}
+                <div class="mb-3">
+                  <b>{{this.name}}</b>
+                  <br>{{this.address}}
+                  <br><small>{{this.favorite_count}} favorites</small>
+                </div>
+                <hr>
+                {{/each}}
+              </div>
+              {{else}}
+              <p class="mt-3">No restaurants have been favorited yet.</p>
+              {{/if}}
+
             </div>
+            
+            <hr>
+
           </div>
 
           <div class="col-6">

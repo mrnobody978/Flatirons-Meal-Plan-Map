@@ -233,9 +233,7 @@ app.get("/logout", auth, (req, res) => {
 // On every load, selects a random restaurant from database to put in recommendation
 
 app.get("/dashboard", auth, async (req, res) => {
-
   try {
-
     const userId = req.session.user.user_id;
 
     const recommendationQuery = `
@@ -254,7 +252,17 @@ app.get("/dashboard", auth, async (req, res) => {
     ORDER BY r.name;
     `;
 
-    // weekly deal
+    const topFavoritesQuery = `
+    SELECT r.*, COUNT(*) AS favorite_count
+    FROM restaurants r
+    JOIN users_to_restaurants ur
+      ON r.id = ur.restaurant_id
+    GROUP BY r.id, r.name, r.website, r.address, r.phone, r.image_path, r.latitude, r.longitude
+    HAVING COUNT(*) > 0
+    ORDER BY COUNT(*) DESC, r.name ASC
+    LIMIT 3;
+    `;
+
     const dealQuery = `
     SELECT *
     FROM deals
@@ -264,17 +272,25 @@ app.get("/dashboard", auth, async (req, res) => {
 
     const restaurant = await db.one(recommendationQuery);
     const favorites = await db.any(favoritesQuery, [userId]);
+    const topFavorites = await db.any(topFavoritesQuery);
     const deal = await db.oneOrNone(dealQuery);
 
-    renderLoggedIn(req, res, "pages/dashboard", { restaurant, favorites, deal });
+    renderLoggedIn(req, res, "pages/dashboard", {
+      restaurant,
+      favorites,
+      topFavorites,
+      deal
+    });
 
   } catch (err) {
-
     console.log("Error fetching dashboard data:", err);
-    renderLoggedIn(req, res, "pages/dashboard", { restaurant: null, favorites: [], deal: null });
-
+    renderLoggedIn(req, res, "pages/dashboard", {
+      restaurant: null,
+      favorites: [],
+      topFavorites: [],
+      deal: null
+    });
   }
-
 });
 
 // Routes for Map
