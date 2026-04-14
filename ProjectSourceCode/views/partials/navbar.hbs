@@ -1,5 +1,281 @@
 <!-- TODO -->
 
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  .fmp-navbar {
+    background-color: #fdc21e;
+    padding: 0.5rem 0;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.10);
+    border-bottom: none !important;
+    position: relative;
+    z-index: 100;
+  }
+
+  /* Thin black accent line under navbar */
+  .fmp-navbar::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: rgba(0,0,0,0.12);
+  }
+
+  /* Logo */
+  .fmp-navbar .navbar-brand {
+  padding: 0;
+  margin-right: 2rem;
+  transition: opacity 0.2s, transform 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+}
+.fmp-navbar .navbar-brand:hover {
+  opacity: 1;
+  transform: scale(1.03);
+}
+
+.fmp-logo-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s;
+}
+.fmp-navbar .navbar-brand:hover .fmp-logo-wrap {
+  transform: translateY(-1px);
+}
+
+.fmp-logo-wrap img {
+  height: 44px;
+  display: block;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
+  transition: filter 0.2s;
+}
+.fmp-navbar .navbar-brand:hover .fmp-logo-wrap img {
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.30));
+}
+
+.fmp-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+.fmp-brand-text .brand-top {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900;
+  font-size: 1.05rem;
+  color: #1a1a1a;
+  letter-spacing: -0.01em;
+}
+.fmp-brand-text .brand-bottom {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
+  font-size: 0.7rem;
+  color: rgba(0,0,0,0.55);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+  /* Nav links base */
+  .fmp-navbar .nav-link {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    font-size: 0.9rem;
+    letter-spacing: 0.04em;
+    color: #1a1a1a !important;
+    padding: 0.4rem 0.9rem !important;
+    border-radius: 999px;
+    transition: background 0.2s, transform 0.15s, font-weight 0.1s;
+    position: relative;
+  }
+
+  .fmp-navbar .nav-link:hover {
+    background: rgba(0,0,0,0.08);
+    transform: translateY(-1px);
+  }
+
+  /* Active pill */
+  .fmp-navbar .nav-link.active {
+    background: #1a1a1a;
+    color: #fdc21e !important;
+    font-weight: 700;
+    font-size: 0.93rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+    letter-spacing: 0.03em;
+  }
+
+  .fmp-navbar .nav-link.active:hover {
+    background: #2e2e2e;
+    transform: translateY(-1px);
+  }
+
+  /* Logout link — slightly muted, right side */
+  .fmp-navbar .nav-link-logout {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+    color: rgba(0,0,0,0.55) !important;
+    padding: 0.4rem 0.75rem !important;
+    border-radius: 999px;
+    border: 1.5px solid rgba(0,0,0,0.18);
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+    text-decoration: none;
+  }
+  .fmp-navbar .nav-link-logout:hover {
+    background: rgba(0,0,0,0.08);
+    color: #1a1a1a !important;
+    border-color: rgba(0,0,0,0.35);
+  }
+
+  /* Divider between nav links and logout */
+  .fmp-nav-divider {
+    width: 1px;
+    height: 20px;
+    background: rgba(0,0,0,0.18);
+    margin: 0 0.75rem;
+    align-self: center;
+  }
+
+  /* Login/Register right-side buttons when logged out */
+  .fmp-navbar .nav-link-login {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: rgba(0,0,0,0.6) !important;
+    padding: 0.4rem 0.9rem !important;
+    border-radius: 999px;
+    transition: background 0.2s, color 0.2s;
+    text-decoration: none;
+  }
+  .fmp-navbar .nav-link-login:hover {
+    background: rgba(0,0,0,0.08);
+    color: #1a1a1a !important;
+  }
+  .fmp-navbar .nav-link-login.active {
+    background: #1a1a1a;
+    color: #fdc21e !important;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  }
+
+  .fmp-navbar .nav-link-register {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #1a1a1a !important;
+    padding: 0.4rem 1rem !important;
+    border-radius: 999px;
+    border: 2px solid #1a1a1a;
+    transition: background 0.2s, color 0.2s, transform 0.15s;
+    text-decoration: none;
+  }
+  .fmp-navbar .nav-link-register:hover {
+    background: #1a1a1a;
+    color: #fdc21e !important;
+    transform: translateY(-1px);
+  }
+  .fmp-navbar .nav-link-register.active {
+    background: #1a1a1a;
+    color: #fdc21e !important;
+    font-weight: 700;
+  }
+
+  /* Mobile toggler */
+  .fmp-navbar .navbar-toggler {
+    border: 2px solid rgba(0,0,0,0.3);
+    border-radius: 0.4rem;
+    padding: 0.3rem 0.5rem;
+  }
+  .fmp-navbar .navbar-toggler:focus {
+    box-shadow: 0 0 0 3px rgba(0,0,0,0.15);
+  }
+</style>
+
+<header>
+  <nav class="navbar navbar-expand-sm fmp-navbar">
+    <div class="container">
+
+      <!-- Logo -->
+      <a class="navbar-brand p-0" href="/dashboard">
+      <div class="fmp-logo-wrap">
+        <img src="/resources/flatironmealplanlogo.png" alt="Flatiron Meal Plan">
+      </div>
+      <div class="fmp-brand-text">
+        <span class="brand-top">Flatiron</span>
+        <span class="brand-bottom">Meal Plan</span>
+      </div>
+    </a>
+
+      <!-- Mobile toggle -->
+      <button
+        class="navbar-toggler ms-auto"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbar-collapse"
+        aria-controls="navbar-collapse"
+        aria-expanded="false"
+        aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbar-collapse">
+
+        {{#if user}}
+          <!-- Logged in: nav links left, logout right -->
+          <ul class="navbar-nav me-auto gap-1">
+            <li class="nav-item">
+              <a class="nav-link {{#if (isEqual currentPage 'dashboard')}}active{{/if}}"
+                 href="/dashboard">Dashboard</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link {{#if (isEqual currentPage 'map')}}active{{/if}}"
+                 href="/map">Map</a>
+            </li>
+          </ul>
+          <div class="d-flex align-items-center">
+            <div class="fmp-nav-divider d-none d-sm-block"></div>
+            <a class="nav-link-logout" href="/logout">Logout</a>
+          </div>
+
+        {{else}}
+          <!-- Logged out: login + register right -->
+          <ul class="navbar-nav me-auto"></ul>
+          <div class="d-flex align-items-center gap-2">
+            <a class="nav-link-login {{#if (isEqual currentPage 'login')}}active{{/if}}"
+               href="/login">Login</a>
+            <a class="nav-link-register {{#if (isEqual currentPage 'register')}}active{{/if}}"
+               href="/register">Register</a>
+          </div>
+        {{/if}}
+
+      </div>
+    </div>
+  </nav>
+</header>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{{!-- 
 <header>
   <nav class="navbar navbar-expand-sm border-bottom" style="background-color: #fdc21e;">
     <div class="container">
@@ -34,22 +310,12 @@
             </li>
           </ul>
           <div class="nav-item me-1">
-            <div class="dropdown">
-              <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <img src="{{#if userImg}}{{userImg}}{{else}}/resources/profile.png{{/if}}" alt="Profile Image" class="profileImage" height="48" width="48">
-              </button>
-              <ul class="dropdown-menu">
-                <li><b class="dropdown-item fw-bold">{{#if realName}}{{realName}}{{else}}{{username}}{{/if}}</b></li>
-                <li><a class="dropdown-item" href="/profile">Profile</a></li>
-                <li><a class="dropdown-item" href="/friends">Friends</a></li>
-                <li><a class="dropdown-item" href="/logout">Logout</a></li>
-              </ul>
-            </div>
+            <a class="nav-link fw-semibold" href="/logout">Logout</a>
           </div>
         {{else}}
           <!-- Links shown only when logged out -->
           <ul class="navbar-nav me-auto"></ul>
-          <div class="d-flex gap-4">
+          <div class="d-flex gap-2">
             <a class="nav-link fw-semibold {{#if (isEqual currentPage 'login')}}active{{/if}}" href="/login">Login</a>
             <a class="nav-link fw-semibold {{#if (isEqual currentPage 'register')}}active{{/if}}" href="/register">Register</a>
           </div>
@@ -58,4 +324,4 @@
       </div>
     </div>
   </nav>
-</header>
+</header> --}}
