@@ -5,3 +5,8 @@ input:invalid:required {
 .validationText {
     color: #ae1616;
 }
+
+.profileImage {
+    border-radius: 50%;
+    overflow: hidden;
+}
