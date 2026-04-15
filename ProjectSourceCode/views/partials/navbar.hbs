@@ -236,9 +236,24 @@
                  href="/map">Map</a>
             </li>
           </ul>
+          <!--
           <div class="d-flex align-items-center">
             <div class="fmp-nav-divider d-none d-sm-block"></div>
             <a class="nav-link-logout" href="/logout">Logout</a>
+          </div>
+          -->
+          <div class="nav-item me-1">
+            <div class="dropdown">
+              <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <img src="{{#if userImg}}{{userImg}}{{else}}/resources/profile.png{{/if}}" alt="Profile Image" class="profileImage" height="48" width="48">
+              </button>
+              <ul class="dropdown-menu">
+                <li><b class="dropdown-item fw-bold">{{#if realName}}{{realName}}{{else}}{{username}}{{/if}}</b></li>
+                <li><a class="dropdown-item" href="/profile">Profile</a></li>
+                <li><a class="dropdown-item" href="/friends">Friends</a></li>
+                <li><a class="dropdown-item" href="/logout">Logout</a></li>
+              </ul>
+            </div>
           </div>
 
         {{else}}
