@@ -739,7 +739,7 @@ app.post("/editprofile", auth, upload.single("profileImage"), async (req, res) =
 });
 
 //Routes for Tests
-app.get('/welcome', auth, (req, res) => {
+app.get('/welcome', (req, res) => {
   res.json({ status: 'success', message: 'Welcome!' });
 });
 
@@ -797,5 +797,7 @@ app.get('/welcome', auth, (req, res) => {
 })();
 
 // Start server and keep it listening ------------------------------------------------------------------
-module.exports = app.listen(3000);
-console.log('Server is listening on port 3000');
+const port = process.env.PORT || 3000;
+module.exports = app.listen(port, () => {
+  console.log(`Server is listening on port ${port}`);
+});
