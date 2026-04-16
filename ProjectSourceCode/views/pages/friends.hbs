@@ -1,0 +1,101 @@
+<div class="container">
+    <div id="warningContainer">
+        {{> warning}}
+    </div>
+    <div class="col card" id="friendsColumn">
+        <div class="text-center">
+            <h2>Friends</h2>
+        </div>
+        {{#if numFriends}}
+            {{#each friends}}
+                <div class="container" id="divFor{{this.user_id}}">
+                    <div class="col">
+                        <img src="{{this.image_path}}" alt="Profile Image">
+                    </div>
+                    <div class="col">
+                        <a href="/profiles/{{this.username}}">{{this.username}}</a>
+                    </div>
+                    <div class="col">
+                        <button class="btn btn-danger" onclick="removeFriend(this)" id="{{this.user_id}}">
+                            Remove friend
+                        </button>
+                    </div>
+                </div>
+                <hr>
+            {{/each}}
+        {{else}}
+            <div class="text-center">
+                <b>
+                    You don't have any friends added.
+                </b>
+            </div>
+        {{/if}}
+    </div>
+    <div class="col card">
+        <div class="row">
+            <div class="text-center">
+                <h2>Friend Requests</h2>
+            </div>
+            {{#if numFriendRequests}}
+                {{#each friendRequests}}
+                    <div class="container" id="divFor{{this.user_id}}">
+                        <div class="col">
+                            <img src="{{this.image_path}}" alt="Profile Image">
+                        </div>
+                        <div class="col">
+                            <p>{{this.username}}</p>
+                        </div>
+                        <div class="col">
+                            <div class="row">
+                                <button class="btn btn-primary" onclick="accpetFriendRequest(this)" id="{{this.user_id}}">
+                                    Accept
+                                </button>
+                            </div>
+                            <div class="row">
+                                <button class="btn btn-danger" onclick="declineFriendRequest(this)" id="{{this.user_id}}">
+                                    Decline
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                {{/each}}
+            {{else}}
+                <div class="text-center">
+                    <b>
+                        You don't have any pending friend requests.
+                    </b>
+                </div>
+            {{/if}}
+        </div>
+        <div class="row">
+            <div class="text-center">
+                <h2>Sent Requests</h2>
+            </div>
+            {{#if numSentRequests}}
+                {{#each sentRequests}}
+                    <div class="container" id="divFor{{this.user_id}}">
+                        <div class="col">
+                            <img src="{{this.image_path}}" alt="Profile Image">
+                        </div>
+                        <div class="col">
+                            <p>{{this.username}}</p>
+                        </div>
+                        <div class="col">
+                            <button class="btn btn-danger" onclick="cancelSentRequest(this);" id="{{this.user_id}}">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                    <hr>
+                {{/each}}
+            {{else}}
+                <div class="text-center">
+                    <b>
+                        You don't have any sent friend requests.
+                    </b>
+                </div>
+            {{/if}}
+        </div>
+    </div>
+</div>
