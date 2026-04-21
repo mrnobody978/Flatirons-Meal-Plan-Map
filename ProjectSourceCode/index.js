@@ -32,8 +32,8 @@ const hbs = handlebars.create({
 
 // database configuration
 const dbConfig = {
-  host: 'db', // the database server
-  port: 5432, // the database port
+  host: process.env.POSTGRES_HOST, // the database server
+  port: process.env.POSTGRES_PORT, // the database port
   database: process.env.POSTGRES_DB, // the database name
   user: process.env.POSTGRES_USER, // the user account to connect with
   password: process.env.POSTGRES_PASSWORD, // the password of the user account
@@ -602,7 +602,7 @@ app.get("/profile/:username", auth, async (req, res) => {
             await renderLoggedIn(req, res, "pages/profile", {
                 allowEdit: false, 
                 profileUsername: userinfo.username,
-                profileUserImg: userinfo.image_path,
+                profileUserImg: userinfo.image_path ? userinfo.image_path : "/resources/profile.png",
                 profileUsername: userinfo.real_name == undefined ? null : userinfo.real_name,
                 showRealName: isFriends,
                 favorites: favorites
@@ -881,7 +881,7 @@ app.post("/requests/accept/:id", auth, async (req, res) => {
 });
 
 //Routes for Tests
-app.get('/welcome', auth, (req, res) => {
+app.get('/welcome', (req, res) => {
   res.json({ status: 'success', message: 'Welcome!' });
 });
 
@@ -939,5 +939,7 @@ app.get('/welcome', auth, (req, res) => {
 })();
 
 // Start server and keep it listening ------------------------------------------------------------------
-module.exports = app.listen(3000);
-console.log('Server is listening on port 3000');
+const port = process.env.PORT || 3000;
+module.exports = app.listen(port, () => {
+  console.log(`Server is listening on port ${port}`);
+});

@@ -1,5 +1,5 @@
 {{#if messageText}}
-    <div class="card border border-{{#if (isEqual messageType 'warning')}}warning{{/if}}{{#if (isEqual messageType 'error')}}danger{{/if}}{{#if (isEqual messageType 'info')}}primary{{/if}}-subtle bg-{{#if (isEqual messageType 'warning')}}warning{{/if}}{{#if (isEqual messageType 'error')}}danger{{/if}}{{#if (isEqual messageType 'info')}}primary{{/if}}-subtle">
+    <div id="warningMessage" class="card border border-{{#if (isEqual messageType 'warning')}}warning{{/if}}{{#if (isEqual messageType 'error')}}danger{{/if}}{{#if (isEqual messageType 'info')}}primary{{/if}}-subtle bg-{{#if (isEqual messageType 'warning')}}warning{{/if}}{{#if (isEqual messageType 'error')}}danger{{/if}}{{#if (isEqual messageType 'info')}}primary{{/if}}-subtle">
         {{messageText}}
     </div>
     <br>

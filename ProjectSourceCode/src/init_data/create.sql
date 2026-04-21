@@ -6,8 +6,15 @@ CREATE TABLE IF NOT EXISTS users (
     image_path VARCHAR(50)
 );
 
--- Lists friends.  When entering data, enter both (friend1, friend2) and (friend2, friend1).
+-- Lists friends.  When entering data, enter both (sender, reciever) and (reciever, sender).
 CREATE TABLE IF NOT EXISTS friends (
+    user_id_1 INT NOT NULL,
+    user_id_2 INT NOT NULL,
+    PRIMARY KEY (user_id_1, user_id_2)
+);
+
+-- Lists friend requests.  When entering data, enter only (sender, reciever) and not (reciever, sender).
+CREATE TABLE IF NOT EXISTS friend_requests (
     user_id_1 INT NOT NULL,
     user_id_2 INT NOT NULL,
     PRIMARY KEY (user_id_1, user_id_2)
