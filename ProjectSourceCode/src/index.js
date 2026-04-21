@@ -32,8 +32,8 @@ const hbs = handlebars.create({
 
 // database configuration
 const dbConfig = {
-  host: 'db', // the database server
-  port: 5432, // the database port
+  host: process.env.POSTGRES_HOST, // the database server
+  port: process.env.POSTGRES_PORT, // the database port
   database: process.env.POSTGRES_DB, // the database name
   user: process.env.POSTGRES_USER, // the user account to connect with
   password: process.env.POSTGRES_PASSWORD, // the password of the user account
@@ -344,7 +344,7 @@ app.get("/dashboard", auth, async (req, res) => {
     const topFavorites = await db.any(topFavoritesQuery);
     const deal = await db.oneOrNone(dealQuery);
 
-    await renderLoggedIn(req, res, "pages/dashboard", {
+    renderLoggedIn(req, res, "pages/dashboard", {
       restaurant,
       favorites,
       topFavorites,
@@ -353,7 +353,7 @@ app.get("/dashboard", auth, async (req, res) => {
 
   } catch (err) {
     console.log("Error fetching dashboard data:", err);
-    await renderLoggedIn(req, res, "pages/dashboard", {
+    renderLoggedIn(req, res, "pages/dashboard", {
       restaurant: null,
       favorites: [],
       topFavorites: [],
@@ -364,8 +364,8 @@ app.get("/dashboard", auth, async (req, res) => {
 
 // Routes for Map
 
-app.get("/map", auth, async (req, res) => {
-  await renderLoggedIn(req, res, "pages/map");
+app.get("/map", auth, (req, res) => {
+  renderLoggedIn(req, res, "pages/map");
 });
 
 // Helper to geocode an address using Nominatim (free, no API key needed)
@@ -580,14 +580,15 @@ app.delete("/api/favorites/:id", auth, async (req, res) => {
 });
 
 app.get("/profile/:username", auth, async (req, res) => {
+    // TODO display other user's profile
     try {
         const userInfoQuery = "SELECT user_id, username, real_name, image_path FROM users WHERE username = $1 LIMIT 1;";
-        let userinfo = await db.any(userInfoQuery, req.params.username);
+        let userinfo = await db.any(userInfoQuery, req.query.username);
         
         if (userinfo.length >= 1) {
             userinfo = userinfo[0];
             const isFriendsQuery = "SELECT * FROM friends WHERE user_id_1 = $1 AND user_id_2 = $2 LIMIT 1;";
-            const isFriends = (await db.any(isFriendsQuery, [getUserID(req), userinfo.user_id])).length == 1;
+            const isFriends = (await db.any(isFriendsQuery, getUserID(), userinfo.user_id)).length == 1;
             
             const favoritesQuery = `
             SELECT r.*
@@ -599,7 +600,7 @@ app.get("/profile/:username", auth, async (req, res) => {
             `;
             const favorites = await db.any(favoritesQuery, userinfo.user_id);
 
-            await renderLoggedIn(req, res, "pages/profile", {
+            renderLoggedIn(req, res, "pages/profile", {
                 allowEdit: false, 
                 profileUsername: userinfo.username,
                 profileUserImg: userinfo.image_path,
@@ -609,7 +610,7 @@ app.get("/profile/:username", auth, async (req, res) => {
             });
         } else { // User not found
             res.status(404);
-            await renderLoggedIn(res, res, "pages/404", {});
+            renderLoggedIn(res, res, "pages/404", {});
         }
 
         
@@ -633,10 +634,10 @@ app.get("/profile", auth, async (req, res) => {
         const userinfo = await getProfileDetails(req);
         const favorites = await db.any(favoritesQuery, userinfo.user_id);
 
-        await renderLoggedIn(req, res, "pages/profile", {
+        renderLoggedIn(req, res, "pages/profile", {
             allowEdit: true, 
             profileUsername: userinfo.username,
-            profileUserImg: userinfo.image_path ? userinfo.image_path : "/resources/profile.png",
+            profileUserImg: userinfo.image_path,
             profileRealName: userinfo.real_name == undefined ? null : userinfo.real_name,
             showRealName: true,
             favorites: favorites
@@ -646,8 +647,8 @@ app.get("/profile", auth, async (req, res) => {
     }
 });
 
-app.get("/editprofile", auth, async (req, res) => {
-    await renderLoggedIn(req, res, "pages/editprofile", {})
+app.get("/editprofile", auth, (req, res) => {
+    renderLoggedIn(req, res, "pages/editprofile", {})
 });
 
 const storage = multer.diskStorage({
@@ -679,13 +680,13 @@ app.post("/editprofile", auth, upload.single("profileImage"), async (req, res) =
         if (newUsername && newUsername != currentInfo.username){
             switch (await checkUsernameChange(newUsername, currentInfo.user_id)) {
                 case -1:
-                    await renderLoggedIn(req, res, "pages/editprofile", { messageType: 'error', messageText: 'An error has occurred, please try again later' });
+                    renderLoggedIn(req, res, "pages/editprofile", { messageType: 'error', messageText: 'An error has occurred, please try again later' });
                     throw "FAIL";
                 case 1:
-                    await renderLoggedIn(req, res, "pages/editprofile", { messageType: 'warning', messageText: 'Invalid username.  Username must be 4-50 characters and contain only letters, numbers, and characters _ . and -' });
+                    renderLoggedIn(req, res, "pages/editprofile", { messageType: 'warning', messageText: 'Invalid username.  Username must be 4-50 characters and contain only letters, numbers, and characters _ . and -' });
                     throw "FAIL";
                 case 2:
-                    await renderLoggedIn(req, res, "pages/editprofile", { messageType: 'warning', messageText: 'Username is already in use, please choose a different username' });
+                    renderLoggedIn(req, res, "pages/editprofile", { messageType: 'warning', messageText: 'Username is already in use, please choose a different username' });
                     throw "FAIL";
             }
             await t.none(updateUsernameQuery, [newUsername, currentInfo.user_id]);
@@ -700,7 +701,7 @@ app.post("/editprofile", auth, upload.single("profileImage"), async (req, res) =
                 fs.unlink(tempPath, err => {
                     console.log("Error deleting temporary image:", err);
                 });
-                await renderLoggedIn(req, res, "pages/editprofile", { messageType: 'warning', messageText: 'Profile image must be of one of these types: ' + acceptedFileTypes.join(" ") });
+                renderLoggedIn(req, res, "pages/editprofile", { messageType: 'warning', messageText: 'Profile image must be of one of these types: ' + acceptedFileTypes.join(" ") });
                 throw "FAIL";
             }
             const localTargetPath = `/resources/userProfileImages/${currentInfo.user_id}${fileType}`;
@@ -732,156 +733,13 @@ app.post("/editprofile", auth, upload.single("profileImage"), async (req, res) =
     }).catch(async err => {
         if (err != "FAIL"){
             console.log("Error updating profile:", err);
-            await renderLoggedIn(req, res, "pages/editprofile", {messageText: "An error occurred, try again later", messageType: "error"});
+            renderLoggedIn(req, res, "pages/editprofile", {messageText: "An error occurred, try again later", messageType: "error"});
         }
     });
-});
-
-async function renderFriendsPage(req, res, args) {
-    const getFriendsQuery = "SELECT u.user_id, u.username, u.image_path, u.real_name FROM friends f JOIN users u ON f.user_id_2 = u.user_id WHERE user_id_1 = $1;";
-    const getOutboundRequestsQuery = "SELECT u.user_id, u.username, u.image_path FROM friend_requests r JOIN users u ON r.user_id_2 = u.user_id WHERE r.user_id_1 = $1;";
-    const getInboundRequestsQuery = "SELECT u.user_id, u.username, u.image_path FROM friend_requests r JOIN users u ON r.user_id_1 = u.user_id WHERE r.user_id_2 = $1;";
-
-    try {
-        const friends = await db.any(getFriendsQuery, getUserID(req));
-        const outboundRequests = await db.any(getOutboundRequestsQuery, getUserID(req));
-        const inboundRequests = await db.any(getInboundRequestsQuery, getUserID(req));
-
-
-        await renderLoggedIn(req, res, "pages/friends", Object.assign({
-            friends: friends,
-            friendRequests: inboundRequests,
-            sentRequests: outboundRequests,
-            numFriends: friends.length,
-            numFriendRequests: inboundRequests.length,
-            numSentRequests: outboundRequests.length
-        }, args));
-    } catch (err) {
-        console.log("Error getting friends:", err);
-        await renderLoggedIn(req, res, "pages/friends", {messageText: "There was an error loading your friends list, try again later", messageType: "error"});
-    }
-}
-
-app.get("/friends", auth, async (req, res) => {
-    await renderFriendsPage(req, res, {});
-});
-
-app.delete("/friends/:id", auth, async (req, res) => {
-    const removeFriendsQuery = "DELETE FROM friends WHERE user_id_1 = $1 AND user_id_2 = $2;";
-
-    await db.task(async t => {
-        await t.none(removeFriendsQuery, [getUserID(req), req.params.id]);
-        await t.none(removeFriendsQuery, [req.params.id, getUserID(req)]);
-
-        res.status(200).json({});
-    }).catch(async err => {
-        console.log("An error occurred removing friends:", err);
-        res.status(500).json({});
-    });
-});
-
-app.delete("/requests/:sentorrecieved/:id", auth, async (req, res) => {
-    const idToRemove = parseInt(req.params.id);
-    let query;
-    if (req.params.sentorrecieved == 'sent') {
-        query = "DELETE FROM friend_requests WHERE user_id_1 = $1 AND user_id_2 = $2;";
-    } else if (req.params.sentorrecieved == 'recieved') {
-        query = "DELETE FROM friend_requests WHERE user_id_2 = $1 AND user_id_1 = $2;";
-    } else {
-        console.log("Error deleting friend request:", req.params.sentorrecieved, "is not 'sent' or 'recieved'.");
-        return;
-    }
-    try {
-        await db.none(query, [getUserID(req), idToRemove]);
-        res.status(200).json({});
-    } catch (err) {
-        console.log("Error removing friend request:", err);
-        res.status(500).json({});
-    }
-});
-
-// Send a friend request from the current user to the given user id
-app.post("/requests/send", auth, async (req, res) => {
-    try {
-        const targetUsername = req.body.username;
-        if (targetUsername == getUsername(req)) {
-            res.status(400);
-            renderFriendsPage(req, res, {messageText: "You can't send a friend request to yourself", messageType: "warning"});
-            return;
-        }
-
-        const getTargetUserQuery = "SELECT user_id, username, image_path FROM users WHERE username = $1 LIMIT 1;";
-        const otherUser = await db.oneOrNone(getTargetUserQuery, targetUsername);
-
-        if (!otherUser) {
-            res.status(400);
-            renderFriendsPage(req, res, {messageText: "That person doesn't exist", messageType: "warning"});
-            return;
-        }
-
-        const idToSend = parseInt(otherUser.user_id);
-        const checkRequestQuery = "SELECT * FROM friend_requests WHERE user_id_1 = $1 AND user_id_2 = $2;";
-        const requestExists = await db.any(checkRequestQuery, [getUserID(req), idToSend]);
-        const requestBackExists = await db.any(checkRequestQuery, [idToSend, getUserID(req)]);
-
-        if (requestExists.length != 0 || requestBackExists.length != 0) { // Request already exists
-            res.status(400);
-            renderFriendsPage(req, res, {messageText: "You already have a friend request to that person", messageType: "warning"});
-            return;
-        }
-
-        const checkAlreadyFriends = "SELECT *FROM friends WHERE user_id_1 = $1 AND user_id_2 = $2 LIMIT 1;"
-        const alreadyFriends = db.oneOrNone(checkAlreadyFriends, [getUserID(req), idToSend]);
-
-        if (!alreadyFriends) {
-            res.status(400);
-            renderFriendsPage(req, res, {messageText: "You can't send a friend request to one of your friends", messageType: "warning"});
-            return;
-        }
-
-        const insertFriendRequestQuery = "INSERT INTO friend_requests (user_id_1, user_id_2) VALUES ($1, $2);";
-        await db.none(insertFriendRequestQuery, [getUserID(req), idToSend]);
-        res.status(200);
-
-        res.redirect("/friends");
-
-    } catch (err) {
-        console.log("Error sending friend request:", err);
-        res.status(500);
-        renderFriendsPage(req, res, {messageText: "There was an error sending your friend request", messageType: "error"});
-    }
-});
-
-app.post("/requests/accept/:id", auth, async (req, res) => {
-    try {
-        // Confirm that the request exists
-        const requestExistsQuery = "SELECT * FROM friend_requests WHERE user_id_1 = $1 AND user_id_2 = $2 LIMIT 1;";
-        const requestExists = await db.oneOrNone(requestExistsQuery, [req.params.id, getUserID(req)]);
-
-        if (!requestExists) {
-            res.status(400).json({message: "Friend request doesn't exist"});
-            return;
-        }
-
-        await db.task(async t => {
-            // Remove the request
-            const removeRequestQuery = "DELETE FROM friend_requests WHERE user_id_1 = $1 AND user_id_2 = $2;";
-            await t.none(removeRequestQuery, [req.params.id, getUserID(req)]);
-
-            // Add to friends list
-            const addFriendQuery = "INSERT INTO friends (user_id_1, user_id_2) VALUES ($1, $2), ($2, $1);";
-            await t.none(addFriendQuery, [req.params.id, getUserID(req)]);
-
-        }).catch(err => {
-            console.log("Error adding friend:", err);
-        });
-    } catch (err) {
-        console.log("Error accepting friend request:", err);
-    }
 });
 
 //Routes for Tests
-app.get('/welcome', auth, (req, res) => {
+app.get('/welcome', (req, res) => {
   res.json({ status: 'success', message: 'Welcome!' });
 });
 
@@ -939,5 +797,7 @@ app.get('/welcome', auth, (req, res) => {
 })();
 
 // Start server and keep it listening ------------------------------------------------------------------
-module.exports = app.listen(3000);
-console.log('Server is listening on port 3000');
+const port = process.env.PORT || 3000;
+module.exports = app.listen(port, () => {
+  console.log(`Server is listening on port ${port}`);
+});

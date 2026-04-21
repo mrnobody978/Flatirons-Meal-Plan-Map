@@ -60,7 +60,7 @@ function removeFriendElement(id) {
     }
 }
 
-async function cancelSendRequest(obj) {
+async function cancelSentRequest(obj) {
     let response = await fetch(`/requests/sent/${obj.id}`, {
         method: 'DELETE'
     });

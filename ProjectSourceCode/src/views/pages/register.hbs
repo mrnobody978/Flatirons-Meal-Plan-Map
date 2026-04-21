@@ -1,0 +1,377 @@
+<!-- TODO: Make this look better -->
+<style>
+  .register-page {
+    min-height: 100vh;
+    background: url('/resources/register-bg.png') center center / cover no-repeat;
+    display: flex;
+    align-items: stretch;
+    position: relative;  /* ADD THIS */
+    overflow: hidden;    /* ADD THIS */
+  }
+
+  .register-page::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to right, rgba(0,0,0,0.62) 0%, rgba(0,0,0,0.18) 100%);
+    z-index: 0;
+  }
+
+  /* Left branding panel */
+  .register-left {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 3rem 3.5rem;
+    color: #fff;
+  }
+
+  .register-left .welcome-tag {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #fdc21e;
+    margin-bottom: 0.75rem;
+  }
+
+  .register-left h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.6rem, 5vw, 4rem);
+    font-weight: 900;
+    color: #fff;
+    line-height: 1.05;
+    margin-bottom: 1.25rem;
+  }
+
+  .register-left h1 span { color: #fdc21e; }
+
+  .register-left p {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    color: rgba(255,255,255,0.78);
+    max-width: 360px;
+    line-height: 1.65;
+    margin-bottom: 2rem;
+  }
+
+  .social-links {
+    display: flex;
+    gap: 0.85rem;
+    align-items: center;
+  }
+
+  .social-links a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    border: 1.5px solid rgba(255,255,255,0.3);
+    color: #fff;
+    font-size: 1.1rem;
+    transition: background 0.2s, border-color 0.2s, transform 0.2s;
+    text-decoration: none;
+  }
+
+  .social-links a:hover {
+    background: #fdc21e;
+    border-color: #fdc21e;
+    color: #1a1a1a;
+    transform: translateY(-2px);
+  }
+
+  /* Right frosted glass card */
+  .register-right {
+    position: relative;
+    z-index: 1;
+    width: 460px;
+    min-width: 340px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.5rem;
+  }
+
+  .register-card {
+    background: rgba(255,255,255,0.13);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 1.4rem;
+    padding: 2.5rem 2rem;
+    width: 100%;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.35);
+  }
+
+  .register-card h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.35rem;
+  }
+
+  .register-card .subtitle {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    color: rgba(255,255,255,0.65);
+    margin-bottom: 1.6rem;
+  }
+
+  .register-card label {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.75);
+    display: block;
+    margin-bottom: 0.3rem;
+  }
+
+  .register-card input[type="text"],
+  .register-card input[type="password"] {
+    width: 100%;
+    padding: 0.65rem 0.9rem;
+    border-radius: 0.5rem;
+    border: 1.5px solid rgba(255,255,255,0.25);
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+
+  .register-card input[type="text"]::placeholder,
+  .register-card input[type="password"]::placeholder {
+    color: rgba(255,255,255,0.38);
+  }
+
+  .register-card input[type="text"]:focus,
+  .register-card input[type="password"]:focus {
+    border-color: #fdc21e;
+    background: rgba(255,255,255,0.18);
+    box-shadow: 0 0 0 3px rgba(253,194,30,0.22);
+  }
+
+  .register-card input:invalid:required {
+    border-color: #e05555;
+  }
+
+  .field-group {
+    margin-bottom: 1rem;
+  }
+
+  .password-row {
+    position: relative;
+  }
+
+  .password-row input {
+    padding-right: 3.5rem;
+  }
+
+  .password-toggle {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.55);
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    padding: 0;
+    transition: color 0.2s;
+    white-space: nowrap;
+  }
+  .password-toggle:hover { color: #fdc21e; }
+
+  .validation-msg {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    color: #f5a3a3;
+    margin-top: 0.3rem;
+    display: none;
+  }
+  .validation-msg.visible { display: block; }
+
+  .btn-register {
+    width: 100%;
+    padding: 0.7rem;
+    background: #fdc21e;
+    border: none;
+    border-radius: 0.5rem;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    color: #1a1a1a;
+    cursor: pointer;
+    margin-top: 0.75rem;
+    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+    box-shadow: 0 3px 12px rgba(253,194,30,0.4);
+    letter-spacing: 0.02em;
+  }
+  .btn-register:hover {
+    background: #e6a800;
+    transform: translateY(-1px);
+    box-shadow: 0 5px 18px rgba(253,194,30,0.5);
+  }
+
+  .register-footer {
+    margin-top: 1.4rem;
+    text-align: center;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    color: rgba(255,255,255,0.6);
+  }
+
+  .register-footer a {
+    color: #fdc21e;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .register-footer a:hover {
+    text-decoration: underline;
+    color: #fff;
+  }
+
+  /* Responsive */
+  @media (max-width: 700px) {
+    .register-page { flex-direction: column; }
+    .register-left { padding: 2.5rem 1.5rem 1.5rem; }
+    .register-left h1 { font-size: 2.2rem; }
+    .register-right { width: 100%; padding: 1rem 1rem 2.5rem; }
+  }
+</style>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<div class="register-page">
+
+  <!-- Left: Branding -->
+  <div class="register-left">
+    <div class="welcome-tag">Flatiron Meal Plan</div>
+    <h1>Join the<br><span>Plan.</span></h1>
+    <p>Discover Boulder's best restaurants, save your favorites, and never wonder where to eat again. Create your free account today.</p>
+    <div class="social-links">
+      <a href="https://www.instagram.com/flatironmealplan" target="_blank" aria-label="Instagram">
+        <i class="bi bi-instagram"></i>
+      </a>
+      <a href="https://www.facebook.com/flatironmealplan" target="_blank" aria-label="Facebook">
+        <i class="bi bi-facebook"></i>
+      </a>
+    </div>
+  </div>
+
+  <!-- Right: Register form -->
+  <div class="register-right">
+    <div class="register-card">
+      <h2>Create Account</h2>
+      <p class="subtitle">Fill in your details to get started</p>
+
+      <form action="/register" method="post" autocomplete="off">
+
+        <!-- Username -->
+        <div class="field-group">
+          <label for="usernameInput">Username</label>
+          <input
+            type="text"
+            name="username"
+            id="usernameInput"
+            placeholder="e.g. buff_foodie"
+            pattern="^[A-Za-z0-9_.\-]{4,50}$"
+            onblur="checkUsername();"
+            {{#if usernameDefault}}value="{{usernameDefault}}"{{/if}}
+            required>
+          <div class="validation-msg" id="usernameValidationText">
+            4–50 characters: letters, numbers, and _ . - only
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="field-group">
+          <label for="passwordInput">Password</label>
+          <div class="password-row">
+            <input
+              type="password"
+              name="password"
+              id="passwordInput"
+              placeholder="••••••••"
+              pattern="^[^\s';]{6,50}$"
+              onblur="checkPassword();"
+              {{#if passwordDefault}}value="{{passwordDefault}}"{{/if}}
+              required>
+            <button type="button" class="password-toggle" id="passwordInputToggle" onclick="toggleViewPassword('passwordInput', this);">Show</button>
+          </div>
+          <div class="validation-msg" id="passwordValidationText">
+            6–50 characters, no spaces or ' or ;
+          </div>
+        </div>
+
+        <!-- Re-enter Password -->
+        <div class="field-group">
+          <label for="passwordInput2">Re-enter Password</label>
+          <div class="password-row">
+            <input
+              type="password"
+              name="password2"
+              id="passwordInput2"
+              placeholder="••••••••"
+              pattern="^[^\s';]{6,50}$"
+              onblur="checkPassword2();"
+              required>
+            <button type="button" class="password-toggle" id="passwordInput2Toggle" onclick="toggleViewPassword('passwordInput2', this);">Show</button>
+          </div>
+          <div class="validation-msg" id="password2ValidationText">
+            Passwords must match
+          </div>
+        </div>
+
+        {{> warning}}
+
+        <button type="submit" class="btn-register" onclick="displayErrorText()">Create Account</button>
+      </form>
+
+      <div class="register-footer">
+        Already have an account? <a href="/login">Sign in</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="/resources/register.js"></script>
+
+
+
+
+
+{{!-- <div class="container">
+    <h2>Register</h2>
+    <form action="/register" method="post" autocomplete="off">
+        <label for="usernameInput">Username: </label>
+        <input type="text" name="username" pattern="^[A-Za-z0-9_.\-]{4,50}$" id="usernameInput" onblur="checkUsername();" {{#if usernameDefault}}value="{{usernameDefault}}"{{/if}} required><br>
+        <small class="validationText" hidden id="usernameValidationText">Username must be 4-50 characters and can contain letters, numbers, and the characters _ . -<br></small>
+        <label for="passwordInput">Password: </label>
+        <input type="password" name="password" pattern="^[^\s';]{6,50}$" id="passwordInput" onblur="checkPassword();" {{#if passwordDefault}}value="{{passwordDefault}}"{{/if}} required>
+        <button type="button" id="passwordInputToggle" onclick="toggleViewPassword('passwordInput', self);">Show password</button><br>
+        <small class="validationText" hidden id="passwordValidationText">Password must be 6-50 characters and cannot contain spaces or '<br></small>
+        <label for="passwordInput2">Re-enter Password: </label>
+        <input type="password" name="password2" pattern="^[^\s';]{6,50}$" id="passwordInput2" onblur="checkPassword2();" required>
+        <button type="button" id="passwordInput2Toggle" onclick="toggleViewPassword('passwordInput2');">Show password</button><br>
+        <small class="validationText" hidden id="password2ValidationText">Passwords must match<br></small>
+        {{> warning}}
+        <button type="submit" onclick="displayErrorText()">Sign up</button>
+    </form>
+</div>
+<script src="/resources/register.js"></script> --}}
