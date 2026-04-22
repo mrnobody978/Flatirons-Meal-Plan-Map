@@ -709,6 +709,12 @@ app.post("/editprofile", auth, async (req, res) => {
     }
 });
 
+function addFilePrefix(user) {
+    if (user && user.image_path) {
+        user.image_path = `https://flatirons-meal-plan-map.s3.us-east-2.amazonaws.com/${user.image_path}`
+    }
+}
+
 async function renderFriendsPage(req, res, args) {
     const getFriendsQuery = "SELECT u.user_id, u.username, u.image_path, u.real_name FROM friends f JOIN users u ON f.user_id_2 = u.user_id WHERE user_id_1 = $1;";
     const getOutboundRequestsQuery = "SELECT u.user_id, u.username, u.image_path FROM friend_requests r JOIN users u ON r.user_id_2 = u.user_id WHERE r.user_id_1 = $1;";
@@ -718,6 +724,10 @@ async function renderFriendsPage(req, res, args) {
         const friends = await db.any(getFriendsQuery, getUserID(req));
         const outboundRequests = await db.any(getOutboundRequestsQuery, getUserID(req));
         const inboundRequests = await db.any(getInboundRequestsQuery, getUserID(req));
+
+        friends.forEach(addFilePrefix);
+        outboundRequests.forEach(addFilePrefix);
+        inboundRequests.forEach(addFilePrefix);
 
 
         await renderLoggedIn(req, res, "pages/friends", Object.assign({
