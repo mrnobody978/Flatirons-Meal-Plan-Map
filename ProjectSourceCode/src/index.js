@@ -15,8 +15,8 @@ const { rmSync } = require('fs');
 const { time, profile } = require('console');
 const { scrapeRestaurants } = require('./resources/scraper');  // To scrape restaurant data from the web
 const { scrapeDeals } = require('./resources/dealScraper'); // To scrape weekly deal data from website
-const multer = require('multer'); // Middleware to process uploaded profile images
-const { uploadUserImage, removeUserImage } = require('./resources/awsHandler');
+const fileUpload = require('express-fileupload') // Processing uploaded images
+const { uploadUserImage, removeUserImage } = require('./resources/awsHandler'); // To handle uploading and removing images from the AWS server
 
 // Constants
 
@@ -616,6 +616,7 @@ app.get("/profile/:username", auth, async (req, res) => {
     }
 });
 
+
 // Routes for profile and editing
 app.get("/profile", auth, async (req, res) => {
     const favoritesQuery = `
@@ -648,20 +649,9 @@ app.get("/editprofile", auth, async (req, res) => {
     await renderLoggedIn(req, res, "pages/editprofile", {})
 });
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'src/resources/temp/');
-    },
-    filename: (req, file, cb) => {
-        cb(null, file.originalname);
-    }
-});
+app.use(fileUpload());
 
-const upload = multer({
-    storage: storage
-});
-
-app.post("/editprofile", auth, upload.single("profileImage"), async (req, res) => {
+app.post("/editprofile", auth, async (req, res) => {
     
     const currentInfo = await getProfileDetails(req);
 
@@ -685,40 +675,20 @@ app.post("/editprofile", auth, upload.single("profileImage"), async (req, res) =
                     await renderLoggedIn(req, res, "pages/editprofile", { messageType: 'warning', messageText: 'Username is already in use, please choose a different username' });
                     throw "FAIL";
             }
-            await t.none(updateUsernameQuery, [newUsername, currentInfo.user_id]);
+            await db.none(updateUsernameQuery, [newUsername, currentInfo.user_id]);
         }
-        if (req.file) {
+        if (req.files && req.files.profileImage) {
             // Save file
-            const tempPath = req.file.path;
-            console.log(tempPath);
-            const fileType = path.extname(req.file.originalname).toLowerCase();
+            const fileType = path.extname(req.files.profileImage.name).toLowerCase();
             const acceptedFileTypes = [".png", ".jpg", ".jpeg"];
             const oldPath = await db.oneOrNone("SELECT image_path FROM users WHERE user_id = $1 LIMIT 1;", currentInfo.user_id);
             if (! fileType in acceptedFileTypes) {
-                fs.unlink(tempPath, err => {
-                    console.log("Error deleting temporary file of unknown type:", err);
-                });
                 await renderLoggedIn(req, res, "pages/editprofile", { messageType: 'warning', messageText: 'Profile image must be of one of these types: ' + acceptedFileTypes.join(" ") });
                 throw "FAIL";
             }
             const newFileName = `${currentInfo.user_id}${fileType}`;
-            await fs.readFile(tempPath, async (err, file) => {
-                if (err) {
-                    console.log("Error reading file:", err);
-                    fs.unlink(tempPath, err => {
-                        if (err)
-                            console.log("Error removing temporary image after readFile error:", err);
-                    })
-                    throw "FAIL";
-                }
-                await uploadUserImage(newFileName, file);
-                await db.none(updateImageQuery, [newFileName, getUserID(req)]);
-
-                await fs.unlink(tempPath, err => {
-                    if (err)
-                        console.log("Error removing temporary image:", err);
-                })
-            });
+            await uploadUserImage(newFileName, req.files.profileImage.data);
+            await db.none(updateImageQuery, [newFileName, getUserID(req)]);
 
             if (oldPath && oldPath.image_path && oldPath.image_path != newFileName) {
                 await removeUserImage(oldPath.image_path);
