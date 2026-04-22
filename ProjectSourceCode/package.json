@@ -11,7 +11,9 @@
     "express-session": "^1.19.0",
     "handlebars": "^4.7.8",
     "pg-promise": "^12.6.2",
-    "multer": "^1.4.5-lts.1"
+    "multer": "^1.4.5-lts.1",
+    "@aws-sdk/client-s3": "^3.420.0",
+    "@aws-sdk/credential-providers": "^3.421.0"
   },
   "devDependencies": {
     "chai": "^4.2.0",
