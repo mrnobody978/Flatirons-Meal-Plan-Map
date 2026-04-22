@@ -16,6 +16,7 @@ const { time, profile } = require('console');
 const { scrapeRestaurants } = require('./resources/scraper');  // To scrape restaurant data from the web
 const { scrapeDeals } = require('./resources/dealScraper'); // To scrape weekly deal data from website
 const multer = require('multer'); // Middleware to process uploaded profile images
+const { uploadUserImage, removeUserImage } = require('./resources/awsHandler');
 
 // Constants
 
@@ -275,13 +276,10 @@ async function getProfileDetails(req) {
 
 async function renderLoggedIn(req, res, page, args) {
     let userinfo = await getProfileDetails(req);
-    if (!userinfo.image_path) {
-        userinfo.image_path = "/resources/profile.png";
-    }
     res.render(page, Object.assign({ 
         user: userinfo.user_id, 
         username: userinfo.username, 
-        userImg: userinfo.image_path, 
+        userImg: userinfo.image_path ? `https://flatirons-meal-plan-map.s3.us-east-2.amazonaws.com/${userinfo.image_path}` : "/resources/profile.png", 
         userRealName: userinfo.real_name == undefined ? "" : userinfo.real_name
     }, args));
 };
@@ -602,7 +600,7 @@ app.get("/profile/:username", auth, async (req, res) => {
             await renderLoggedIn(req, res, "pages/profile", {
                 allowEdit: false, 
                 profileUsername: userinfo.username,
-                profileUserImg: userinfo.image_path ? userinfo.image_path : "/resources/profile.png",
+                profileUserImg: userinfo.image_path ? `https://flatirons-meal-plan-map.s3.us-east-2.amazonaws.com/${userinfo.image_path}` : "/resources/profile.png",
                 profileUsername: userinfo.real_name == undefined ? null : userinfo.real_name,
                 showRealName: isFriends,
                 favorites: favorites
@@ -636,7 +634,7 @@ app.get("/profile", auth, async (req, res) => {
         await renderLoggedIn(req, res, "pages/profile", {
             allowEdit: true, 
             profileUsername: userinfo.username,
-            profileUserImg: userinfo.image_path ? userinfo.image_path : "/resources/profile.png",
+            profileUserImg: userinfo.image_path ? `https://flatirons-meal-plan-map.s3.us-east-2.amazonaws.com/${userinfo.image_path}` : "/resources/profile.png",
             profileRealName: userinfo.real_name == undefined ? null : userinfo.real_name,
             showRealName: true,
             favorites: favorites
@@ -652,7 +650,7 @@ app.get("/editprofile", auth, async (req, res) => {
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'resources/temp/');
+        cb(null, 'src/resources/temp/');
     },
     filename: (req, file, cb) => {
         cb(null, file.originalname);
@@ -670,12 +668,11 @@ app.post("/editprofile", auth, upload.single("profileImage"), async (req, res) =
     const newUsername = req.body.username;
     const newRealName = req.body.realName;
 
-
     const updateUsernameQuery = "UPDATE users SET username = $1 WHERE user_id = $2;";
     const updateImageQuery = "UPDATE users SET image_path = $1 WHERE user_id = $2;";
     const updateRealNameQuery = "UPDATE users SET real_name = $1 WHERE user_id = $2;";
 
-    db.task(async t => {
+    try {
         if (newUsername && newUsername != currentInfo.username){
             switch (await checkUsernameChange(newUsername, currentInfo.user_id)) {
                 case -1:
@@ -693,48 +690,53 @@ app.post("/editprofile", auth, upload.single("profileImage"), async (req, res) =
         if (req.file) {
             // Save file
             const tempPath = req.file.path;
+            console.log(tempPath);
             const fileType = path.extname(req.file.originalname).toLowerCase();
             const acceptedFileTypes = [".png", ".jpg", ".jpeg"];
             const oldPath = await db.oneOrNone("SELECT image_path FROM users WHERE user_id = $1 LIMIT 1;", currentInfo.user_id);
             if (! fileType in acceptedFileTypes) {
                 fs.unlink(tempPath, err => {
-                    console.log("Error deleting temporary image:", err);
+                    console.log("Error deleting temporary file of unknown type:", err);
                 });
                 await renderLoggedIn(req, res, "pages/editprofile", { messageType: 'warning', messageText: 'Profile image must be of one of these types: ' + acceptedFileTypes.join(" ") });
                 throw "FAIL";
             }
-            const localTargetPath = `/resources/userProfileImages/${currentInfo.user_id}${fileType}`;
-            const targetPath = path.join(__dirname, localTargetPath);
-            fs.rename(tempPath, targetPath, err => {
+            const newFileName = `${currentInfo.user_id}${fileType}`;
+            await fs.readFile(tempPath, async (err, file) => {
                 if (err) {
-                    console.log("Error uploading image:", err);
-                    throw err;
-                } else {
-                    db.none(updateImageQuery, [localTargetPath, currentInfo.user_id]);
+                    console.log("Error reading file:", err);
+                    fs.unlink(tempPath, err => {
+                        if (err)
+                            console.log("Error removing temporary image after readFile error:", err);
+                    })
+                    throw "FAIL";
                 }
+                await uploadUserImage(newFileName, file);
+                await db.none(updateImageQuery, [newFileName, getUserID(req)]);
+
+                await fs.unlink(tempPath, err => {
+                    if (err)
+                        console.log("Error removing temporary image:", err);
+                })
             });
-            console.log(oldPath);
-            if (oldPath && oldPath.image_path != localTargetPath) {
-                fs.unlink(path.join(__dirname, oldPath.image_path), err => {
-                    if (err) {
-                        console.log("Error removing old image:", err);
-                    }
-                });
+
+            if (oldPath && oldPath.image_path && oldPath.image_path != newFileName) {
+                await removeUserImage(oldPath.image_path);
             }
 
         } 
         if (newRealName && newRealName != currentInfo.real_name) {
             console.log("Changing real name...", newRealName, currentInfo.real_name);
-            await t.none(updateRealNameQuery, [newRealName, currentInfo.user_id]);
+            await db.none(updateRealNameQuery, [newRealName, currentInfo.user_id]);
         }
-    }).then(async () => {
+
         res.redirect("/profile");
-    }).catch(async err => {
+    } catch (err) {
         if (err != "FAIL"){
             console.log("Error updating profile:", err);
             await renderLoggedIn(req, res, "pages/editprofile", {messageText: "An error occurred, try again later", messageType: "error"});
         }
-    });
+    }
 });
 
 async function renderFriendsPage(req, res, args) {
