@@ -13,7 +13,7 @@
                 {{#each friends}}
                     <div class="container row" id="divFor{{this.user_id}}">
                         <div class="col">
-                            <img src={{#if this.image_path}}"{{this.image_path}}"{{else}}"/resources/profile.png"{{/if}} alt="Profile Image" height="96" width="96">
+                            <img src={{#if this.image_path}}"{{this.image_path}}"{{else}}"/resources/profile.png"{{/if}} alt="Profile Image" height="96" width="96" class="profileImage">
                         </div>
                         <div class="col">
                             <a href="/profile/{{this.username}}">{{this.username}}</a>
@@ -44,7 +44,7 @@
                     {{#each friendRequests}}
                         <div class="container row" id="divFor{{this.user_id}}">
                             <div class="col">
-                                <img src={{#if this.image_path}}"{{this.image_path}}"{{else}}"/resources/profile.png"{{/if}} alt="Profile Image" height="96" width="96">
+                                <img src={{#if this.image_path}}"{{this.image_path}}"{{else}}"/resources/profile.png"{{/if}} alt="Profile Image" height="96" width="96" class="profileImage">
                             </div>
                             <div class="col">
                                 <p>{{this.username}}</p>
@@ -88,7 +88,7 @@
                     {{#each sentRequests}}
                         <div class="container row" id="divFor{{this.user_id}}">
                             <div class="col">
-                                <img src={{#if this.image_path}}"{{this.image_path}}"{{else}}"/resources/profile.png"{{/if}} alt="Profile Image" height="96" width="96">
+                                <img src={{#if this.image_path}}"{{this.image_path}}"{{else}}"/resources/profile.png"{{/if}} alt="Profile Image" height="96" width="96" class="profileImage">
                             </div>
                             <div class="col">
                                 <p>{{this.username}}</p>
