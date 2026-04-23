@@ -6,23 +6,30 @@ This diagram visualizes the high-level architecture of the Flatiron Meal Plan Ma
 graph LR
     subgraph "Client Side (Frontend)"
         User((User)) --> Browser[Web Browser]
-        Browser --> Pages[Handlebars Templates / HTML]
+        Browser --> Pages[Presentation Layer: Handlebars Templates]
         Browser --> CSS[Vanilla CSS / Bootstrap]
         Browser --> ClientJS[map.js / login.js / register.js]
+        ClientJS --> Leaflet[Leaflet.js Library]
     end
 
-    subgraph "Server Side (Backend - Node.js/Express)"
-        Browser <--> Express[Express Server - index.js]
-        Express --> Auth[Session Management / bcryptjs]
-        Express --> Scraper[Axios + Cheerio Scrapers]
-        Express --> AWS_SDK[AWS SDK - S3 Handler]
+    subgraph "Hosted on Render (Cloud Deployment)"
+        subgraph "Server Side (Backend - Node.js/Express)"
+            Express[Business Layer: Express Server] -- HTML Response --> Browser
+            Browser -- HTTP Requests --> Express
+            Express --> Auth[Session Management / bcryptjs]
+            Express --> Scraper[Axios + Cheerio Scrapers]
+            Express --> AWS_SDK[AWS SDK - S3 Handler]
+        end
+
+        subgraph "Database Layer (PostgreSQL)"
+            Express <--> Postgres[(Relational Database)]
+        end
     end
 
     subgraph "Data & External Services"
-        Express <--> Postgres[(PostgreSQL Database)]
         Scraper -- Fetches Data --> FlatironSite[Flatiron Meal Plan Website]
         AWS_SDK <--> S3[AWS S3 - User Images]
-        ClientJS -- Tile Layers --> OSM[OpenStreetMap API]
+        Leaflet -- Tile Layers --> OSM[OpenStreetMap API]
     end
 
     %% Styling
