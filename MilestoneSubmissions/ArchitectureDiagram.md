@@ -3,7 +3,7 @@
 This diagram visualizes the high-level architecture of the Flatiron Meal Plan Map, showing the interactions between the frontend, backend, database, and external services.
 
 ```mermaid
-graph TD
+graph LR
     subgraph "Client Side (Frontend)"
         User((User)) --> Browser[Web Browser]
         Browser --> Pages[Handlebars Templates / HTML]
