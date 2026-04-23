@@ -31,11 +31,11 @@ UAT will be executed during **Week 4** of the project. Testers will verify featu
 
 #### **UAT-1.1: Submit valid registration form**
 * **Description:** A new user attempts to create an account by filling out all mandatory fields with valid information.
-* **Test Data:** Name: `Test User`, Email: `test@colorado.edu`, Username: `dev_tester`, Password: `Secure123`, Confirm Password: `Secure123`.
+* **Test Data:** Name: `TestUser`, Password: `Secure123`, Confirm Password: `Secure123`.
 * **Test Environment:** Localhost (Docker / Node.js / PostgreSQL).
 * **Expected Result:** Redirect to `/dashboard`; user record is successfully saved to the `users` table.
 * **Tester Information:** Pranav (CU Boulder student; target demographic).
-* **Actual Result:** [Pending]
+* **Actual Result:** Passed, user was directed to '/dashboard' and user was saved to the 'users' table.
 
 #### **UAT-1.2: Submit non-matching passwords**
 * **Description:** User attempts to register but provides two different passwords in the password and confirmation fields.
@@ -43,7 +43,7 @@ UAT will be executed during **Week 4** of the project. Testers will verify featu
 * **Test Environment:** Localhost (Docker / Node.js / PostgreSQL).
 * **Expected Result:** Registration fails; error message displayed: *"Passwords must match"*.
 * **Tester Information:** Marie (University student; target demographic).
-* **Actual Result:** [Pending]
+* **Actual Result:** Registration fails and correct message shows only after the register button is clicked.
 
 #### **UAT-1.3: Submit short username**
 * **Description:** User attempts to register with a username that does not meet the minimum length requirement (4 characters).
@@ -51,7 +51,7 @@ UAT will be executed during **Week 4** of the project. Testers will verify featu
 * **Test Environment:** Localhost (Docker / Node.js / PostgreSQL).
 * **Expected Result:** Registration fails; error message displayed: *"Invalid username"*.
 * **Tester Information:** Ryan (University student; target demographic).
-* **Actual Result:** [Pending]
+* **Actual Result:** A username that is less than the minimum length does not allow you to register and shows a message "Please match the requested format"
 
 ---
 
@@ -63,7 +63,7 @@ UAT will be executed during **Week 4** of the project. Testers will verify featu
 * **Test Environment:** Localhost (Docker / Node.js / PostgreSQL).
 * **Expected Result:** Success; user is authenticated and redirected to the Dashboard.
 * **Tester Information:** Hayden (University student; target demographic).
-* **Actual Result:** [Pending]
+* **Actual Result:** Success, the user is authenticated and directed ot the dashboard.
 
 #### **UAT-2.2: Login with incorrect password**
 * **Description:** A user attempts to log in with a correct username but an incorrect password.
@@ -71,7 +71,7 @@ UAT will be executed during **Week 4** of the project. Testers will verify featu
 * **Test Environment:** Localhost (Docker / Node.js / PostgreSQL).
 * **Expected Result:** Login fails; error message displayed: *"Invalid username or password"*.
 * **Tester Information:** Garrett (University student; target demographic).
-* **Actual Result:** [Pending]
+* **Actual Result:** Success, the user is not logged in and the message "Invalid username or password is displayed.
 
 #### **UAT-2.3: Unauthorized page access**
 * **Description:** An unauthenticated user attempts to bypass the login screen by entering a protected URL directly.
@@ -79,7 +79,7 @@ UAT will be executed during **Week 4** of the project. Testers will verify featu
 * **Test Environment:** Localhost (Docker / Node.js / PostgreSQL).
 * **Expected Result:** Access denied; user is automatically redirected back to the `/login` page.
 * **Tester Information:** Pranav (University student; target demographic).
-* **Actual Result:** [Pending]
+* **Actual Result:** Success, the user is directed back to the login page when trying to bypass it with a protected url.
 
 ---
 
@@ -91,7 +91,7 @@ UAT will be executed during **Week 4** of the project. Testers will verify featu
 * **Test Environment:** Localhost (Docker / Node.js / PostgreSQL).
 * **Expected Result:** The Dashboard displays exactly one restaurant name and its corresponding description.
 * **Tester Information:** Marie (University student; target demographic).
-* **Actual Result:** [Pending]
+* **Actual Result:** This test passed, the user can see one restaurant name under the random recommendation on the dashboard.
 
 #### **UAT-3.2: Refresh Recommendation**
 * **Description:** A user refreshes the dashboard to verify that the recommendation engine provides a new random restaurant.
@@ -99,7 +99,7 @@ UAT will be executed during **Week 4** of the project. Testers will verify featu
 * **Test Environment:** Localhost (Docker / Node.js / PostgreSQL).
 * **Expected Result:** The page reloads and displays a different restaurant name/description from the database.
 * **Tester Information:** Ryan (University student; target demographic).
-* **Actual Result:** [Pending]
+* **Actual Result:** Success, the user recieves a new recommendation every time the page resets.
 
 ---
 
@@ -125,12 +125,12 @@ UAT will be executed during **Week 4** of the project. Testers will verify featu
 ## 6. Summary of Results (Week 4)
 *To be filled out during the final testing phase.*
 
-- **Total Tests Executed:** 0  
-- **Total Passed:** 0  
+- **Total Tests Executed:** 8 
+- **Total Passed:** 8
 - **Total Failed:** 0  
 
 **Observations:**
-- [Add any observations during testing here]
+- The test users found the login and register process to be straight forward, accessible and clear. The only exception being the specific usename and password formatting requirements. It would be prudent to add specific formatting requirements when a user inputs an incorrect format.
 
 ---
 
